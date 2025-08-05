@@ -33,6 +33,11 @@ h1 {
   color: #003399;
 }
 
+.card {
+  text-decoration: none;
+  color: inherit;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -74,3 +79,4 @@ footer {
   height: 60px;
   width: 100%;
 }
+
