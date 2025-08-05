@@ -6,50 +6,98 @@
   <title>Eskom SPU Tariffs App</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Font Awesome (Free Icons) -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <!-- Header Banner -->
   <header>
     <img src="assets/header_banner.png" alt="Eskom Banner" class="header-banner" />
   </header>
 
-  <!-- Main Content -->
   <main class="content">
     <h1>Welcome to the Eskom SPU Tariff App</h1>
     <div class="card-grid">
-      <!-- Billing & Simulation Card -->
-      <div class="card">
+      <!-- Billing & Simulation -->
+      <div class="card" onclick="toggleSection('billing')">
         <i class="fas fa-file-invoice-dollar fa-2x"></i>
         <h2>Billing & Simulation</h2>
-        <p>Simulate your bill or view your billing history with detailed breakdowns.</p>
+        <p>Simulate or view previous bills.</p>
       </div>
 
-      <!-- Tariff Tools Card -->
-      <div class="card">
+      <!-- Tariff Tools -->
+      <div class="card" onclick="toggleSection('tariffs')">
         <i class="fas fa-chart-pie fa-2x"></i>
         <h2>Tariff Tools</h2>
-        <p>Explore SPU tariff breakdowns, compare with other tariffs and download documents.</p>
+        <p>Explore SPU rates, compare tariffs.</p>
       </div>
 
-      <!-- Updates & Alerts Card -->
-      <div class="card">
+      <!-- Updates & Alerts -->
+      <div class="card" onclick="toggleSection('updates')">
         <i class="fas fa-bullhorn fa-2x"></i>
         <h2>Updates & Alerts</h2>
-        <p>Stay informed with the latest NERSA updates and Eskom communications.</p>
+        <p>Get the latest NERSA and Eskom updates.</p>
       </div>
 
-      <!-- User Area Card -->
-      <div class="card">
+      <!-- User Area -->
+      <div class="card" onclick="toggleSection('user')">
         <i class="fas fa-user-circle fa-2x"></i>
         <h2>User Area</h2>
-        <p>Access your profile, manage PODs, and track your electricity usage insights.</p>
+        <p>Profile, PODs and usage insights.</p>
       </div>
     </div>
+
+    <!-- Expandable Sections -->
+    <section id="billing" class="sub-section">
+      <h3>Billing & Simulation</h3>
+      <div class="sub-card-grid">
+        <div class="sub-card">Simulate My Bill</div>
+        <div class="sub-card">View Billing History</div>
+        <div class="sub-card">Forecast My Bill</div>
+      </div>
+    </section>
+
+    <section id="tariffs" class="sub-section">
+      <h3>Tariff Tools</h3>
+      <div class="sub-card-grid">
+        <div class="sub-card">SPU Tariff Breakdown</div>
+        <div class="sub-card">Compare with Megaflex</div>
+        <div class="sub-card">Download Tariff Book</div>
+      </div>
+    </section>
+
+    <section id="updates" class="sub-section">
+      <h3>Updates & Alerts</h3>
+      <div class="sub-card-grid">
+        <div class="sub-card">Latest NERSA Updates</div>
+        <div class="sub-card">Eskom Announcements</div>
+        <div class="sub-card">Tariff Changes</div>
+      </div>
+    </section>
+
+    <section id="user" class="sub-section">
+      <h3>User Area</h3>
+      <div class="sub-card-grid">
+        <div class="sub-card">My Profile</div>
+        <div class="sub-card">Manage PODs</div>
+        <div class="sub-card">View Usage Insights</div>
+      </div>
+    </section>
   </main>
 
-  <!-- Footer -->
   <footer></footer>
+
+  <script>
+    function toggleSection(sectionId) {
+      const sections = document.querySelectorAll('.sub-section');
+      sections.forEach(section => {
+        if (section.id === sectionId) {
+          section.style.display = (section.style.display === 'block') ? 'none' : 'block';
+        } else {
+          section.style.display = 'none';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
+
