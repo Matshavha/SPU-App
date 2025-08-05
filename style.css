@@ -104,8 +104,8 @@ footer {
 /* Mobile-specific overrides */
 @media (max-width: 600px) {
   .back-button {
-    top: 18px;        /* Fine-tuned for mobile */
-    left: 10px;       /* Shift slightly inward for smaller screens */
+    top: 2px;        /* Fine-tuned for mobile */
+    left: 2px;       /* Shift slightly inward for smaller screens */
   }
 
   .back-button span {
