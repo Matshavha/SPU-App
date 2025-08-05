@@ -1,4 +1,4 @@
-// ✅ simulate.js with embedded tariff data
+// ✅ simulate.js with embedded tariff data and VAT inclusion
 
 // Embedded tariff data as JSON
 const tariffData = [
@@ -144,6 +144,8 @@ const tariffData = [
   }
 ];
 
+const VAT_RATE = 0.15;
+
 function daysBetween(start, end) {
   const s = new Date(start);
   const e = new Date(end);
@@ -179,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const days = daysBetween(document.getElementById('start').value, document.getElementById('end').value);
 
     const breakdown = [];
-    let total = 0;
+    let subtotal = 0;
 
     for (const key in selectedTariff) {
       const value = parseFloat(selectedTariff[key]);
@@ -193,37 +195,56 @@ document.addEventListener('DOMContentLoaded', () => {
           charge = value * pods * days;
         }
 
-        total += charge;
-        breakdown.push({ name: key.split('[')[0].trim(), unit, rate: value, charge });
+        const chargeWithVAT = charge * (1 + VAT_RATE);
+        subtotal += chargeWithVAT;
+
+        breakdown.push({
+          name: key.split('[')[0].trim(),
+          unit,
+          rate: value,
+          charge: chargeWithVAT
+        });
       }
     }
 
+    const vatAmount = subtotal / (1 + VAT_RATE) * VAT_RATE;
+
     output.innerHTML = `
-      <h2>Bill Breakdown</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Charge Type</th>
-            <th>Unit</th>
-            <th>Rate</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${breakdown.map(item => `
+  <h2 style="margin-bottom: 10px;">Bill Breakdown (VAT Inclusive)</h2>
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; margin-bottom: 10px;">
+      <thead style="background-color: #f9f9f9;">
+        <tr>
+          <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ccc;">Charge Type</th>
+          <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ccc;">Rate (Incl. VAT)</th>
+          <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ccc;">Amount (Incl. VAT)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${breakdown.map(item => {
+          const rateWithVAT = item.rate * (1 + VAT_RATE);
+          const rateDisplay = item.unit === 'c/kWh'
+            ? `${rateWithVAT.toFixed(2)} c/kWh`
+            : `${formatRands(rateWithVAT)} R/Pod/Day`;
+
+          return `
             <tr>
-              <td>${item.name}</td>
-              <td>${item.unit}</td>
-              <td>${item.unit === 'c/kWh' ? formatCents(item.rate) : formatRands(item.rate)}</td>
-              <td>${formatRands(item.charge)}</td>
-            </tr>
-          `).join('')}
-          <tr style="font-weight: bold;">
-            <td colspan="3">Total</td>
-            <td>${formatRands(total)}</td>
-          </tr>
-        </tbody>
-      </table>
-    `;
+              <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name}</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${rateDisplay}</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid #eee;">${formatRands(item.charge)}</td>
+            </tr>`;
+        }).join('')}
+        <tr style="background-color: #e7f4ea;">
+          <td colspan="2" style="padding: 12px; text-align: right; font-size: 1.1em; font-weight: bold;">Total (Incl. VAT)</td>
+          <td style="padding: 12px; text-align: right; font-size: 1.1em; font-weight: bold;">
+            ${formatRands(subtotal)}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-style: italic; color: #555;">All rates and amounts include VAT at 15%.</p>
+`;
   });
 });
+
