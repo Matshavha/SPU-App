@@ -38,6 +38,13 @@ h1 {
   color: inherit;
 }
 
+.card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -82,8 +89,8 @@ footer {
 
 .back-button {
   position: absolute;
-  top: 15px;          /* Default for desktop */
-  left: 15px;
+  top: 25px;               /* Default: desktop position */
+  left: 10px;
   background: none;
   color: white;
   font-weight: bold;
@@ -101,11 +108,10 @@ footer {
   font-size: 1.2rem;
 }
 
-/* Mobile-specific overrides */
+/* For small screens (mobile) */
 @media (max-width: 600px) {
   .back-button {
-    top: 0.1px;        /* Fine-tuned for mobile */
-    left: 0.5px;       /* Shift slightly inward for smaller screens */
+    top: 5px; /* Adjust this value as needed for mobile alignment */
   }
 
   .back-button span {
