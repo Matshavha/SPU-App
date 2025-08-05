@@ -103,7 +103,8 @@ footer {
 /* For small screens (mobile) */
 @media (max-width: 600px) {
   .back-button {
-    top: 5px; /* Adjust this value as needed for mobile alignment */
+    top: 1px; /* Adjust this value as needed for mobile alignment */
+    left: 1px;
   }
 
   .back-button span {
