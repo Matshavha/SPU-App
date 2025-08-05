@@ -79,10 +79,11 @@ footer {
   height: 60px;
   width: 100%;
 }
+
 .back-button {
   position: absolute;
-  top: 25px;               /* Default: desktop position */
-  left: 10px;
+  top: 15px;          /* Default for desktop */
+  left: 15px;
   background: none;
   color: white;
   font-weight: bold;
@@ -100,17 +101,14 @@ footer {
   font-size: 1.2rem;
 }
 
-/* For small screens (mobile) */
+/* Mobile-specific overrides */
 @media (max-width: 600px) {
   .back-button {
-    top: 1px; /* Adjust this value as needed for mobile alignment */
-    left: 1px;
+    top: 18px;        /* Fine-tuned for mobile */
+    left: 10px;       /* Shift slightly inward for smaller screens */
   }
 
   .back-button span {
     display: none;
   }
 }
-
-
-
