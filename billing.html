@@ -8,34 +8,45 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-   
+
+  <!-- Back button on header -->
   <a href="index.html" class="back-button">
-  <i class="fas fa-arrow-left"></i>
-  <span>Back</span>
+    <i class="fas fa-arrow-left"></i>
+    <span>Back</span>
   </a>
-  
-  <header>
+
+  <!-- Header Banner -->
+  <header style="position: relative;">
     <img src="assets/header_banner.png" alt="Eskom Banner" class="header-banner" />
   </header>
 
+  <!-- Main Content -->
   <main class="content">
     <h1>Billing & Simulation</h1>
     <div class="card-grid">
-      <div class="card">
+
+      <!-- Simulate My Bill (clickable) -->
+      <a href="simulate.html" class="card">
         <i class="fas fa-calculator fa-2x"></i>
         <h2>Simulate My Bill</h2>
         <p>Estimate your upcoming bill using SPU rates and usage.</p>
-      </div>
+      </a>
+
+      <!-- Billing History -->
       <div class="card">
         <i class="fas fa-clock-rotate-left fa-2x"></i>
         <h2>Billing History</h2>
         <p>View and download previous postpaid billing statements.</p>
       </div>
+
+      <!-- Forecast My Bill -->
       <div class="card">
         <i class="fas fa-chart-line fa-2x"></i>
         <h2>Forecast My Bill</h2>
         <p>Use trends to predict upcoming charges.</p>
       </div>
+
+      <!-- Billing FAQs -->
       <div class="card">
         <i class="fas fa-question-circle fa-2x"></i>
         <h2>Billing FAQs</h2>
@@ -44,7 +55,9 @@
     </div>
   </main>
 
+  <!-- Footer -->
   <footer></footer>
+
 </body>
 </html>
 
