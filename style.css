@@ -80,6 +80,58 @@ h1 {
   color: #555;
 }
 
+.selector label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.selector select {
+  padding: 8px;
+  font-size: 1em;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.education {
+  background: #f0f8ff;
+  border-left: 5px solid #004684;
+  padding: 15px;
+  margin-bottom: 25px;
+  border-radius: 8px;
+}
+
+.tariff-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.tariff-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s;
+}
+
+.tariff-card:hover {
+  transform: scale(1.02);
+}
+
+.tariff-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9em;
+}
+
+.tariff-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+
 /* Footer */
 footer {
   background-color: #003399;
@@ -111,8 +163,8 @@ footer {
 /* For small screens (mobile) */
 @media (max-width: 600px) {
   .back-button {
-    top: 0.01px; /* Adjust this value as needed for mobile alignment */
-    left: 0.01px;
+    top: 0.1px; /* Adjust this value as needed for mobile alignment */
+    left: 0.1px;
   }
 
   .back-button span {
