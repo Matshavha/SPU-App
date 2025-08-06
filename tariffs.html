@@ -8,11 +8,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
+
   <a href="index.html" class="back-button">
-  <i class="fas fa-arrow-left"></i>
-  <span>Back</span>
+    <i class="fas fa-arrow-left"></i>
+    <span>Back</span>
   </a>
-  
+
   <header>
     <img src="assets/header_banner.png" alt="Eskom Banner" class="header-banner" />
   </header>
@@ -20,25 +21,34 @@
   <main class="content">
     <h1>Tariff Tools</h1>
     <div class="card-grid">
-      <div class="card">
+
+      <!-- ✅ Card 1: SPU Tariff Breakdown -->
+      <div class="card" onclick="window.location.href='spu-tariff.html'" style="cursor: pointer;">
         <i class="fas fa-table fa-2x"></i>
         <h2>SPU Tariff Breakdown</h2>
         <p>Get a full view of TOU periods, rates, and demand charges by category.</p>
       </div>
-      <div class="card">
+
+      <!-- 🔄 Card 2: Compare Tariffs -->
+      <div class="card" onclick="alert('Compare Tariffs page is under construction.');" style="cursor: pointer;">
         <i class="fas fa-balance-scale fa-2x"></i>
         <h2>Compare Tariffs</h2>
         <p>Compare SPU vs Megaflex, Miniflex and other Eskom tariffs.</p>
       </div>
-      <div class="card">
+
+      <!-- 🔄 Card 3: Download Tariff Book -->
+      <div class="card" onclick="window.open('assets/SPU_Tariff_Book.pdf', '_blank');" style="cursor: pointer;">
         <i class="fas fa-download fa-2x"></i>
         <h2>Download Tariff Book</h2>
         <p>Access the latest official SPU tariff documentation (PDF).</p>
       </div>
+
     </div>
   </main>
 
   <footer></footer>
+
 </body>
 </html>
+
 
