@@ -34,39 +34,13 @@
       </select>
     </section>
 
-    <!-- Controls / Personalization -->
-    <section class="controls" style="display:none" id="controlsBar">
-      <div class="control-group">
-        <!-- VAT Toggle -->
-        <label class="switch" title="Toggle VAT inclusive/exclusive">
-          <input type="checkbox" id="vatToggle" checked />
-          <span class="slider"></span>
-        </label>
-        <span id="vatModeLabel">VAT: Inclusive</span>
-      </div>
-
-      <div class="control-group">
-        <input id="searchBox" type="search" placeholder="Search tariff name…" />
-      </div>
-
-      <div class="control-group">
-        <label for="sortBy">Sort</label>
-        <select id="sortBy">
-          <option value="default">Default</option>
-          <option value="energyAsc">Energy (c/kWh) ↑</option>
-          <option value="energyDesc">Energy (c/kWh) ↓</option>
-          <option value="fixedAsc">Fixed daily charges ↑</option>
-          <option value="fixedDesc">Fixed daily charges ↓</option>
-        </select>
-      </div>
-
-      <div class="control-group">
-        <label class="switch" title="Compact view">
-          <input type="checkbox" id="compactToggle" />
-          <span class="slider"></span>
-        </label>
-        <span>Compact cards</span>
-      </div>
+    <!-- Controls: VAT toggle only -->
+    <section class="controls" id="controlsBar" style="display:none;">
+      <label class="switch" title="Toggle VAT inclusive/exclusive">
+        <input type="checkbox" id="vatToggle" checked />
+        <span class="slider"></span>
+      </label>
+      <span id="vatModeLabel">VAT: Inclusive</span>
     </section>
 
     <!-- Education Panel -->
@@ -84,21 +58,19 @@
     <section id="tariffContainer" class="tariff-cards-grid"></section>
   </main>
 
-  <!-- Minimal styles for the toggle if your CSS doesn't have them -->
+  <!-- Minimal styles for the toggle if your CSS doesn't include them -->
   <style>
-    .controls{display:flex;gap:.75rem;flex-wrap:wrap;margin:1rem 0}
-    .control-group{display:flex;align-items:center;gap:.5rem}
+    .controls{display:flex;align-items:center;gap:.5rem;margin:1rem 0}
     .switch{position:relative;display:inline-block;width:44px;height:24px}
     .switch input{opacity:0;width:0;height:0}
     .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.2s;border-radius:24px}
     .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;transition:.2s;border-radius:50%}
     input:checked + .slider{background:#0a7}
     input:checked + .slider:before{transform:translateX(20px)}
-    .compact .tariff-card{padding:.75rem}
-    .tariff-card .quick-calc{margin-top:.5rem;border-top:1px solid #eee;padding-top:.5rem;display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-    .tariff-card .result{grid-column:1/-1;font-weight:600}
     .fav{cursor:pointer;font-size:1.1rem;user-select:none}
     .fav.active{color:#e08600}
   </style>
 </body>
 </html>
+
+
