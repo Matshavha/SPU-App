@@ -22,31 +22,31 @@
   <main class="content">
     <h1>Compare SPU Tariffs</h1>
 
-    <!-- Step 1 -->
+    <!-- Step 1: Multi-category selection -->
     <section class="card" style="margin-bottom:1rem;">
-      <h2>Step 1 — Choose a category</h2>
-      <select id="category" style="max-width:320px;">
-        <option value="">-- Select a category --</option>
-        <option value="Businessrate">Businessrate</option>
-        <option value="Homepower">Homepower</option>
-        <option value="Landrate">Landrate</option>
-        <option value="Homelight">Homelight</option>
-        <option value="Landlight">Landlight</option>
-      </select>
-      <p id="catHint" class="muted" style="margin:.5rem 0 0;">Pick a category to see available tariffs.</p>
+      <h2>Step 1 — Choose categories (you can select multiple)</h2>
+      <div id="categoryGroup" style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        <label class="option-tile"><input type="checkbox" class="cat" value="Businessrate"> <span>Businessrate</span></label>
+        <label class="option-tile"><input type="checkbox" class="cat" value="Homepower"   checked> <span>Homepower</span></label>
+        <label class="option-tile"><input type="checkbox" class="cat" value="Landrate"> <span>Landrate</span></label>
+        <label class="option-tile"><input type="checkbox" class="cat" value="Homelight"   checked> <span>Homelight</span></label>
+        <label class="option-tile"><input type="checkbox" class="cat" value="Landlight"> <span>Landlight</span></label>
+      </div>
+      <p id="catHint" class="muted" style="margin:.5rem 0 0;">Tick categories to see available tariffs below.</p>
     </section>
 
-    <!-- Step 2 -->
+    <!-- Step 2: Tariff selection (up to 5) -->
     <section class="card" style="margin-bottom:1rem;">
-      <h2>Step 2 — Select up to 3 tariffs to compare</h2>
-      <div id="tariffOptions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.5rem;"></div>
+      <h2>Step 2 — Select up to 5 tariffs to compare</h2>
+      <div id="tariffOptions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.5rem;"></div>
       <div style="margin-top:.5rem;display:flex;gap:.75rem;align-items:center;">
-        <span id="selCounter" class="muted">0/3 selected</span>
-        <span id="selWarning" class="muted" style="color:#b00;display:none;">You can select at most 3.</span>
+        <span id="selCounter" class="muted">0/5 selected</span>
+        <span id="selWarning" class="muted" style="color:#b00;display:none;">You can select at most 5.</span>
+        <button id="clearSelBtn" class="btn" type="button" style="margin-left:auto;">Clear selection</button>
       </div>
     </section>
 
-    <!-- Step 3 -->
+    <!-- Step 3: VAT -->
     <section class="card" style="margin-bottom:1rem;">
       <h2>Step 3 — VAT mode</h2>
       <label class="switch" title="Toggle VAT inclusive/exclusive">
@@ -57,7 +57,7 @@
       <p class="muted" style="margin-top:.5rem;">All values update instantly when you toggle VAT.</p>
     </section>
 
-    <!-- Step 4 -->
+    <!-- Step 4: Bill inputs -->
     <section class="card" style="margin-bottom:1rem;">
       <h2>Step 4 — Bill inputs</h2>
       <div style="display:flex;flex-wrap:wrap;gap:1rem;">
@@ -75,7 +75,7 @@
     <section class="card-grid" style="grid-template-columns:1fr;gap:1rem;">
       <div class="card">
         <h2>Estimated Monthly Bill</h2>
-        <div id="billChart" style="width:100%;height:220px;"></div>
+        <div id="billChart" style="width:100%;height:240px;"></div>
         <table class="tariff-table" id="billTable" style="margin-top:1rem;">
           <thead>
             <tr>
@@ -92,7 +92,7 @@
 
       <div class="card">
         <h2>Component Split (Energy vs Fixed)</h2>
-        <div id="splitChart" style="width:100%;height:180px;"></div>
+        <div id="splitChart" style="width:100%;height:200px;"></div>
         <table class="tariff-table" id="componentTable" style="margin-top:1rem;">
           <thead>
             <tr>
@@ -109,15 +109,15 @@
     <section id="usageTips" class="muted" style="margin-top:1rem;">
       <strong>How to use:</strong>
       <ol style="margin:.5rem 0 0 1rem;">
-        <li>Pick a category.</li>
-        <li>Tick 2–3 tariffs.</li>
+        <li>Select one or more categories (e.g., Homepower + Homelight).</li>
+        <li>Tick up to five tariffs to compare.</li>
         <li>Toggle VAT if needed.</li>
         <li>Enter your kWh and billing days. Results update instantly.</li>
       </ol>
     </section>
   </main>
 
-  <!-- Minimal styles for the toggle if not present in your CSS -->
+  <!-- Minimal styles for the toggle/tiles if not present in your CSS -->
   <style>
     .muted{color:#666;font-size:.9rem}
     .switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle;margin-right:.5rem}
@@ -128,9 +128,11 @@
     input:checked + .slider:before{transform:translateX(20px)}
     .option-tile{border:1px solid #e5e5e5;border-radius:.75rem;padding:.5rem .75rem;display:flex;gap:.5rem;align-items:center;background:#fff}
     .option-tile input{transform:scale(1.1)}
+    .pill{font-size:.75rem;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:999px;padding:.05rem .5rem;margin-left:auto}
+    .btn{border:1px solid #ddd;background:#fafafa;border-radius:.5rem;padding:.4rem .7rem;cursor:pointer}
+    .btn:hover{background:#f2f2f2}
   </style>
 
   <script defer src="compareTariffs.js"></script>
 </body>
 </html>
-
