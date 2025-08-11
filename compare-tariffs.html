@@ -5,9 +5,8 @@
   <title>Compare SPU Tariffs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Chart.js for professional charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
 
@@ -23,59 +22,78 @@
   <main class="content">
     <h1>Compare SPU Tariffs</h1>
 
-    <!-- Controls -->
-    <section class="selector" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;">
-      <div>
-        <label for="category">Step 1: Choose a category</label>
-        <select id="category">
-          <option value="">-- Choose --</option>
-          <option value="Businessrate">Businessrate</option>
-          <option value="Homepower">Homepower</option>
-          <option value="Landrate">Landrate</option>
-          <option value="Homelight">Homelight</option>
-          <option value="Landlight">Landlight</option>
-        </select>
-      </div>
+    <!-- Step 1 -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 1 — Choose a category</h2>
+      <select id="category" style="max-width:320px;">
+        <option value="">-- Select a category --</option>
+        <option value="Businessrate">Businessrate</option>
+        <option value="Homepower">Homepower</option>
+        <option value="Landrate">Landrate</option>
+        <option value="Homelight">Homelight</option>
+        <option value="Landlight">Landlight</option>
+      </select>
+      <p id="catHint" class="muted" style="margin:.5rem 0 0;">Pick a category to see available tariffs.</p>
+    </section>
 
-      <div>
-        <label for="tariffSelect">Step 2: Pick up to 3 tariffs</label>
-        <select id="tariffSelect" multiple size="6" style="width:100%;">
-          <!-- options injected -->
-        </select>
-        <small>Tip: Hold Ctrl/Cmd to pick 2–3.</small>
+    <!-- Step 2 -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 2 — Select up to 3 tariffs to compare</h2>
+      <div id="tariffOptions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.5rem;"></div>
+      <div style="margin-top:.5rem;display:flex;gap:.75rem;align-items:center;">
+        <span id="selCounter" class="muted">0/3 selected</span>
+        <span id="selWarning" class="muted" style="color:#b00;display:none;">You can select at most 3.</span>
       </div>
+    </section>
 
-      <div style="display:flex;align-items:center;gap:.5rem;">
-        <label class="switch" title="Toggle VAT inclusive/exclusive">
-          <input type="checkbox" id="vatToggle" checked />
-          <span class="slider"></span>
+    <!-- Step 3 -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 3 — VAT mode</h2>
+      <label class="switch" title="Toggle VAT inclusive/exclusive">
+        <input type="checkbox" id="vatToggle" checked />
+        <span class="slider"></span>
+      </label>
+      <span id="vatModeLabel">VAT: Inclusive</span>
+      <p class="muted" style="margin-top:.5rem;">All values update instantly when you toggle VAT.</p>
+    </section>
+
+    <!-- Step 4 -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 4 — Bill inputs</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+        <label>Monthly energy (kWh)
+          <input id="kwhInput" type="number" min="0" step="0.1" value="500" style="width:160px;">
         </label>
-        <span id="vatModeLabel">VAT: Inclusive</span>
+        <label>Billing days
+          <input id="daysInput" type="number" min="1" max="31" step="1" value="30" style="width:160px;">
+        </label>
       </div>
+      <p class="muted" style="margin-top:.5rem;">We compare the estimated monthly bill from energy + fixed daily charges.</p>
     </section>
 
-    <!-- Summary -->
-    <section style="margin-top:1rem;">
-      <p id="selectionHint">Select up to 3 tariffs to compare.</p>
-    </section>
-
-    <!-- Charts -->
-    <section class="card-grid" style="grid-template-columns:1fr;gap:1.25rem;">
+    <!-- Results -->
+    <section class="card-grid" style="grid-template-columns:1fr;gap:1rem;">
       <div class="card">
-        <h2>Energy-based charges (c/kWh)</h2>
-        <canvas id="energyChart" height="140"></canvas>
+        <h2>Estimated Monthly Bill</h2>
+        <div id="billChart" style="width:100%;height:220px;"></div>
+        <table class="tariff-table" id="billTable" style="margin-top:1rem;">
+          <thead>
+            <tr>
+              <th>Tariff</th>
+              <th>Energy total</th>
+              <th>Fixed total</th>
+              <th>VAT</th>
+              <th><span id="billTotalHdr">Total (VAT incl.)</span></th>
+            </tr>
+          </thead>
+          <tbody><!-- injected --></tbody>
+        </table>
       </div>
-      <div class="card">
-        <h2>Fixed daily charges (R/Pod/Day)</h2>
-        <canvas id="fixedChart" height="140"></canvas>
-      </div>
-    </section>
 
-    <!-- Tables -->
-    <section class="card-grid" style="grid-template-columns:1fr;gap:1.25rem;margin-top:1rem;">
       <div class="card">
-        <h2>Totals</h2>
-        <table class="tariff-table" id="totalsTable">
+        <h2>Component Split (Energy vs Fixed)</h2>
+        <div id="splitChart" style="width:100%;height:180px;"></div>
+        <table class="tariff-table" id="componentTable" style="margin-top:1rem;">
           <thead>
             <tr>
               <th>Tariff</th>
@@ -83,38 +101,36 @@
               <th>Total fixed (R/Pod/Day)</th>
             </tr>
           </thead>
-          <tbody><!-- rows injected --></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Energy component breakdown (c/kWh)</h2>
-        <table class="tariff-table" id="energyTable">
-          <thead><!-- injected --></thead>
-          <tbody><!-- injected --></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Fixed component breakdown (R/Pod/Day)</h2>
-        <table class="tariff-table" id="fixedTable">
-          <thead><!-- injected --></thead>
           <tbody><!-- injected --></tbody>
         </table>
       </div>
     </section>
+
+    <section id="usageTips" class="muted" style="margin-top:1rem;">
+      <strong>How to use:</strong>
+      <ol style="margin:.5rem 0 0 1rem;">
+        <li>Pick a category.</li>
+        <li>Tick 2–3 tariffs.</li>
+        <li>Toggle VAT if needed.</li>
+        <li>Enter your kWh and billing days. Results update instantly.</li>
+      </ol>
+    </section>
   </main>
 
-  <!-- Minimal styles if your CSS lacks a switch -->
+  <!-- Minimal styles for the toggle if not present in your CSS -->
   <style>
-    .switch{position:relative;display:inline-block;width:44px;height:24px}
+    .muted{color:#666;font-size:.9rem}
+    .switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle;margin-right:.5rem}
     .switch input{opacity:0;width:0;height:0}
     .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.2s;border-radius:24px}
     .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
     input:checked + .slider{background:#0a7}
     input:checked + .slider:before{transform:translateX(20px)}
+    .option-tile{border:1px solid #e5e5e5;border-radius:.75rem;padding:.5rem .75rem;display:flex;gap:.5rem;align-items:center;background:#fff}
+    .option-tile input{transform:scale(1.1)}
   </style>
 
   <script defer src="compareTariffs.js"></script>
 </body>
 </html>
+
