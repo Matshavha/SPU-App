@@ -1,6 +1,7 @@
-// compareTariffs.js — dependency-free, fast SVG charts
+// compareTariffs.js — dependency-free, fast SVG charts, inter-category + up to 5 tariffs
 
 const VAT_RATE = 0.15;
+const MAX_SELECT = 5;
 
 // Keep this in sync with your spuTariffsmart.js
 const tariffData = [
@@ -33,6 +34,7 @@ const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
 const isFixedKey  = (k) => keyUnit(k) === "R/Pod/Day";
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
+const catOf = (tName) => tName.split(" ")[0]; // Businessrate, Homepower, Landrate, Homelight, Landlight
 
 function energyCentsPerKwhTotal(t) {
   return Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0);
@@ -45,24 +47,20 @@ function calcBill(t, kwh, days, vatIncl) {
   const fixedR_excl  = fixedRandsPerDayTotal(t) * days;
   const sub_excl = energyR_excl + fixedR_excl;
   const total = vatIncl ? sub_excl * (1 + VAT_RATE) : sub_excl;
-  const vat = vatIncl ? sub_excl * VAT_RATE : 0;
-  return {
-    energyR_excl, fixedR_excl, sub_excl, vat, total
-  };
+  const vat   = vatIncl ? sub_excl * VAT_RATE : 0;
+  return { energyR_excl, fixedR_excl, sub_excl, vat, total };
 }
-
 function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
 function perDay(v){ return `R ${v.toFixed(2)} /Pod/Day`; }
 
 // ---------- state ----------
 const state = {
-  category: "",
-  selected: [], // array of tariff names
+  categories: new Set(["Homepower", "Homelight"]), // defaults
+  selected: [], // tariff names
   vatInclusive: true,
   kwh: 500,
-  days: 30,
-  maxSelect: 3
+  days: 30
 };
 
 // ---------- DOM ----------
@@ -70,40 +68,48 @@ const dom = {};
 function q(id){ return document.getElementById(id); }
 
 document.addEventListener("DOMContentLoaded", () => {
-  dom.category     = q("category");
-  dom.catHint      = q("catHint");
-  dom.options      = q("tariffOptions");
-  dom.selCounter   = q("selCounter");
-  dom.selWarning   = q("selWarning");
+  dom.catGroup    = q("categoryGroup");
+  dom.catHint     = q("catHint");
 
-  dom.vatToggle    = q("vatToggle");
-  dom.vatLabel     = q("vatModeLabel");
+  dom.options     = q("tariffOptions");
+  dom.selCounter  = q("selCounter");
+  dom.selWarning  = q("selWarning");
+  dom.clearSelBtn = q("clearSelBtn");
 
-  dom.kwhInput     = q("kwhInput");
-  dom.daysInput    = q("daysInput");
+  dom.vatToggle   = q("vatToggle");
+  dom.vatLabel    = q("vatModeLabel");
 
-  dom.billChart    = q("billChart");
-  dom.splitChart   = q("splitChart");
+  dom.kwhInput    = q("kwhInput");
+  dom.daysInput   = q("daysInput");
 
-  dom.billTable    = q("billTable").querySelector("tbody");
-  dom.compTable    = q("componentTable").querySelector("tbody");
-  dom.billTotalHdr = q("billTotalHdr");
+  dom.billChart   = q("billChart");
+  dom.splitChart  = q("splitChart");
+  dom.billTable   = q("billTable").querySelector("tbody");
+  dom.compTable   = q("componentTable").querySelector("tbody");
+  dom.billTotalHdr= q("billTotalHdr");
 
-  // Default to Homepower for immediate clarity
-  dom.category.value = "Homepower";
-  onCategoryChange();
+  // Wire category checkboxes
+  dom.catGroup.querySelectorAll("input.cat").forEach(cb => {
+    cb.addEventListener("change", () => {
+      if (cb.checked) state.categories.add(cb.value);
+      else state.categories.delete(cb.value);
+      // Reset selections that no longer belong
+      state.selected = state.selected.filter(name => state.categories.has(catOf(name)));
+      renderOptions();
+      updateSelCounter();
+      renderResults();
+    });
+  });
 
-  // Preselect first two
-  autoPreselect(2);
-
-  // Listeners
-  dom.category.addEventListener("change", onCategoryChange);
+  // VAT
   dom.vatToggle.addEventListener("change", () => {
     state.vatInclusive = dom.vatToggle.checked;
     dom.vatLabel.textContent = `VAT: ${state.vatInclusive ? "Inclusive" : "Exclusive"}`;
     dom.billTotalHdr.textContent = `Total (VAT ${state.vatInclusive ? "incl." : "excl."})`;
     renderResults();
   });
+
+  // Bill inputs
   dom.kwhInput.addEventListener("input", () => {
     state.kwh = Math.max(0, Number(dom.kwhInput.value) || 0);
     renderResults();
@@ -116,28 +122,32 @@ document.addEventListener("DOMContentLoaded", () => {
     renderResults();
   });
 
-  // First render
+  // Clear selection
+  dom.clearSelBtn.addEventListener("click", () => {
+    state.selected = [];
+    dom.options.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    updateSelCounter();
+    renderResults();
+  });
+
+  // Initial paint
   dom.vatLabel.textContent = "VAT: Inclusive";
+  renderOptions();
+  autoPreselect(2); // show results immediately
   renderResults();
 });
 
-// ---------- category & selection ----------
-function onCategoryChange() {
-  state.category = dom.category.value;
-  state.selected = [];
-  renderOptions();
-  updateSelCounter();
-  renderResults();
-}
-
+// ---------- options & selection ----------
 function renderOptions() {
   dom.options.innerHTML = "";
-  if (!state.category) {
-    dom.catHint.textContent = "Pick a category to see available tariffs.";
+  const cats = state.categories;
+  if (!cats.size) {
+    dom.catHint.textContent = "Tick at least one category to load tariffs.";
     return;
   }
-  dom.catHint.textContent = "Tick 2–3 tariffs to compare.";
-  const items = tariffData.filter(t => t.Tariff.startsWith(state.category));
+  dom.catHint.textContent = "Tick up to five tariffs to compare.";
+
+  const items = tariffData.filter(t => cats.has(catOf(t.Tariff)));
 
   items.forEach(t => {
     const id = "opt_" + t.Tariff.replace(/\s+/g, "_");
@@ -146,8 +156,10 @@ function renderOptions() {
     wrap.innerHTML = `
       <input type="checkbox" id="${id}" value="${t.Tariff}">
       <span>${t.Tariff}</span>
+      <span class="pill">${catOf(t.Tariff)}</span>
     `;
     const cb = wrap.querySelector("input");
+    cb.checked = state.selected.includes(t.Tariff);
     cb.addEventListener("change", () => onSelectChange(cb));
     dom.options.appendChild(wrap);
   });
@@ -156,29 +168,33 @@ function renderOptions() {
 function onSelectChange(cb) {
   const name = cb.value;
   if (cb.checked) {
-    if (state.selected.length >= state.maxSelect) {
+    if (state.selected.length >= MAX_SELECT) {
       cb.checked = false;
       dom.selWarning.style.display = "";
       return;
     }
+    dom.selWarning.style.display = "none";
     state.selected.push(name);
   } else {
     state.selected = state.selected.filter(n => n !== name);
-    dom.selWarning.style.display = "none";
   }
   updateSelCounter();
   renderResults();
 }
 
 function updateSelCounter() {
-  dom.selCounter.textContent = `${state.selected.length}/${state.maxSelect} selected`;
+  dom.selCounter.textContent = `${state.selected.length}/${MAX_SELECT} selected`;
 }
 
 function autoPreselect(n) {
   const cbs = dom.options.querySelectorAll("input[type=checkbox]");
-  for (let i = 0; i < cbs.length && i < n; i++) {
-    cbs[i].checked = true;
-    state.selected.push(cbs[i].value);
+  let count = 0;
+  for (let i = 0; i < cbs.length && count < n; i++) {
+    if (!cbs[i].checked) {
+      cbs[i].checked = true;
+      state.selected.push(cbs[i].value);
+      count++;
+    }
   }
   updateSelCounter();
 }
@@ -189,11 +205,8 @@ function renderResults() {
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  // Tables
   renderComponentTable(selectedTariffs);
   renderBillTable(selectedTariffs);
-
-  // Charts (SVG)
   renderBillChart(selectedTariffs);
   renderSplitChart(selectedTariffs);
 }
@@ -237,7 +250,6 @@ function renderBillChart(items) {
 
 function renderSplitChart(items) {
   dom.splitChart.innerHTML = "";
-  // show stacked % split of energy vs fixed (excl VAT to show structural split)
   const labels = items.map(t => t.Tariff);
   const pairs = items.map(t => {
     const r = calcBill(t, state.kwh, state.days, false);
@@ -248,63 +260,6 @@ function renderSplitChart(items) {
     };
   });
   drawStackedPctChart(dom.splitChart, labels, pairs);
-}
-
-// Simple horizontal bar chart (SVG)
-function drawBarChart(container, labels, values, { unit = "" } = {}) {
-  const w = container.clientWidth || 600;
-  const h = container.clientHeight || 220;
-  const pad = 30;
-  const barH = Math.max(18, Math.min(36, (h - pad*2) / Math.max(1, labels.length)));
-  const max = Math.max(1, Math.max(...values, 0));
-  const svg = svgEl("svg", { width: w, height: h });
-
-  labels.forEach((lab, i) => {
-    const y = pad + i * barH;
-    const val = values[i] || 0;
-    const bw = ((w - pad*2) * val) / max;
-
-    // background line
-    svg.appendChild(rect(pad, y + barH*0.2, w - pad*2, barH*0.6, "#f1f1f1"));
-    // bar
-    svg.appendChild(rect(pad, y + barH*0.2, bw, barH*0.6, "#2b7"));
-
-    // label
-    svg.appendChild(text(6, y + barH*0.7, lab, { anchor: "start", size: 12, color: "#444" }));
-    // value
-    const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
-    svg.appendChild(text(w - 6, y + barH*0.7, display, { anchor: "end", size: 12, color: "#111" }));
-  });
-
-  container.appendChild(svg);
-}
-
-// 100% stacked split (energy vs fixed)
-function drawStackedPctChart(container, labels, pairs) {
-  const w = container.clientWidth || 600;
-  const h = container.clientHeight || 180;
-  const pad = 30;
-  const barH = Math.max(18, Math.min(30, (h - pad*2) / Math.max(1, labels.length)));
-  const svg = svgEl("svg", { width: w, height: h });
-
-  labels.forEach((lab, i) => {
-    const y = pad + i * barH;
-    const e = Math.max(0, Math.min(100, pairs[i].energyPct || 0));
-    const f = Math.max(0, 100 - e);
-    const eW = (w - pad*2) * (e / 100);
-    const fW = (w - pad*2) - eW;
-
-    // energy part
-    svg.appendChild(rect(pad, y + barH*0.2, eW, barH*0.6, "#58a"));
-    // fixed part
-    svg.appendChild(rect(pad + eW, y + barH*0.2, fW, barH*0.6, "#a85"));
-
-    // legend text inline
-    svg.appendChild(text(pad + 6, y + barH*0.7, `${lab}`, { anchor: "start", size: 12, color: "#444" }));
-    svg.appendChild(text(w - 6, y + barH*0.7, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: "#111" }));
-  });
-
-  container.appendChild(svg);
 }
 
 // SVG helpers
@@ -318,5 +273,53 @@ function text(x,y,str,{anchor="start",size=12,color="#000"}={}) {
   const t = svgEl("text", { x, y, "text-anchor": anchor, "font-size": size, fill: color, "dominant-baseline":"middle", "font-family":"system-ui, Segoe UI, Roboto, Arial" });
   t.textContent = str;
   return t;
+}
+
+// Simple horizontal bar chart (SVG)
+function drawBarChart(container, labels, values, { unit = "" } = {}) {
+  const w = container.clientWidth || 680;
+  const h = container.clientHeight || 240;
+  const pad = 30;
+  const rowH = Math.max(18, Math.min(38, (h - pad*2) / Math.max(1, labels.length)));
+  const max = Math.max(1, Math.max(...values, 0));
+  const svg = svgEl("svg", { width: w, height: h });
+
+  labels.forEach((lab, i) => {
+    const y = pad + i * rowH;
+    const val = values[i] || 0;
+    const bw = ((w - pad*2) * val) / max;
+
+    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, "#f1f1f1")); // bg
+    svg.appendChild(rect(pad, y + rowH*0.2, bw, rowH*0.6, "#2b7"));           // bar
+    svg.appendChild(text(6, y + rowH*0.7, lab, { anchor: "start", size: 12, color: "#444" }));
+    const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
+    svg.appendChild(text(w - 6, y + rowH*0.7, display, { anchor: "end", size: 12, color: "#111" }));
+  });
+
+  container.appendChild(svg);
+}
+
+// 100% stacked split (energy vs fixed)
+function drawStackedPctChart(container, labels, pairs) {
+  const w = container.clientWidth || 680;
+  const h = container.clientHeight || 200;
+  const pad = 30;
+  const rowH = Math.max(18, Math.min(34, (h - pad*2) / Math.max(1, labels.length)));
+  const svg = svgEl("svg", { width: w, height: h });
+
+  labels.forEach((lab, i) => {
+    const y = pad + i * rowH;
+    const e = Math.max(0, Math.min(100, pairs[i].energyPct || 0));
+    const f = Math.max(0, 100 - e);
+    const eW = (w - pad*2) * (e / 100);
+    const fW = (w - pad*2) - eW;
+
+    svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, "#58a"));             // energy
+    svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, "#a85"));        // fixed
+    svg.appendChild(text(pad + 6, y + rowH*0.7, `${lab}`, { anchor: "start", size: 12, color: "#444" }));
+    svg.appendChild(text(w - 6, y + rowH*0.7, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: "#111" }));
+  });
+
+  container.appendChild(svg);
 }
 
