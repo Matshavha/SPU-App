@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tariff Tools</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
 </head>
 <body>
 
@@ -20,25 +23,26 @@
 
   <main class="content">
     <h1>Tariff Tools</h1>
+
     <div class="card-grid">
 
       <!-- ✅ Card 1: SPU Tariff Breakdown -->
       <div class="card" onclick="window.location.href='spu-tariff.html'" style="cursor: pointer;">
-        <i class="fas fa-table fa-2x"></i>
+        <i class="fas fa-table fa-2x" aria-hidden="true"></i>
         <h2>SPU Tariff Breakdown</h2>
-        <p>Get a full view of SPU Tariffs.</p>
+        <p>Get a full view of SPU tariffs with VAT toggle and favourites.</p>
       </div>
 
-      <!-- 🔄 Card 2: Compare Tariffs -->
-      <div class="card" onclick="alert('Compare Tariffs page is under construction.');" style="cursor: pointer;">
-        <i class="fas fa-balance-scale fa-2x"></i>
+      <!-- ✅ Card 2: Compare Tariffs -->
+      <div class="card" onclick="window.location.href='compare-tariffs.html'" style="cursor: pointer;">
+        <i class="fas fa-balance-scale fa-2x" aria-hidden="true"></i>
         <h2>Compare Tariffs</h2>
-        <p>Compare SPU Eskom tariffs.</p>
+        <p>Select 2–3 SPU tariffs to compare side-by-side with charts and tables.</p>
       </div>
 
-      <!-- 🔄 Card 3: Download Tariff Book -->
+      <!-- ✅ Card 3: Download Tariff Book -->
       <div class="card" onclick="window.open('assets/SPU_Tariff_Book.pdf', '_blank');" style="cursor: pointer;">
-        <i class="fas fa-download fa-2x"></i>
+        <i class="fas fa-download fa-2x" aria-hidden="true"></i>
         <h2>Download Tariff Book</h2>
         <p>Access the latest official SPU tariff documentation (PDF).</p>
       </div>
@@ -50,5 +54,7 @@
 
 </body>
 </html>
+
+
 
 
