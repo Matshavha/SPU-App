@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compare SPU Tariffs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Chart.js for professional charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <a href="tariffs.html" class="back-button">
+    <i class="fas fa-arrow-left"></i>
+    <span>Back</span>
+  </a>
+
+  <header>
+    <img src="assets/header_banner.png" alt="Eskom Banner" class="header-banner" />
+  </header>
+
+  <main class="content">
+    <h1>Compare SPU Tariffs</h1>
+
+    <!-- Controls -->
+    <section class="selector" style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;">
+      <div>
+        <label for="category">Step 1: Choose a category</label>
+        <select id="category">
+          <option value="">-- Choose --</option>
+          <option value="Businessrate">Businessrate</option>
+          <option value="Homepower">Homepower</option>
+          <option value="Landrate">Landrate</option>
+          <option value="Homelight">Homelight</option>
+          <option value="Landlight">Landlight</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="tariffSelect">Step 2: Pick up to 3 tariffs</label>
+        <select id="tariffSelect" multiple size="6" style="width:100%;">
+          <!-- options injected -->
+        </select>
+        <small>Tip: Hold Ctrl/Cmd to pick 2–3.</small>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <label class="switch" title="Toggle VAT inclusive/exclusive">
+          <input type="checkbox" id="vatToggle" checked />
+          <span class="slider"></span>
+        </label>
+        <span id="vatModeLabel">VAT: Inclusive</span>
+      </div>
+    </section>
+
+    <!-- Summary -->
+    <section style="margin-top:1rem;">
+      <p id="selectionHint">Select up to 3 tariffs to compare.</p>
+    </section>
+
+    <!-- Charts -->
+    <section class="card-grid" style="grid-template-columns:1fr;gap:1.25rem;">
+      <div class="card">
+        <h2>Energy-based charges (c/kWh)</h2>
+        <canvas id="energyChart" height="140"></canvas>
+      </div>
+      <div class="card">
+        <h2>Fixed daily charges (R/Pod/Day)</h2>
+        <canvas id="fixedChart" height="140"></canvas>
+      </div>
+    </section>
+
+    <!-- Tables -->
+    <section class="card-grid" style="grid-template-columns:1fr;gap:1.25rem;margin-top:1rem;">
+      <div class="card">
+        <h2>Totals</h2>
+        <table class="tariff-table" id="totalsTable">
+          <thead>
+            <tr>
+              <th>Tariff</th>
+              <th>Total energy (c/kWh)</th>
+              <th>Total fixed (R/Pod/Day)</th>
+            </tr>
+          </thead>
+          <tbody><!-- rows injected --></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Energy component breakdown (c/kWh)</h2>
+        <table class="tariff-table" id="energyTable">
+          <thead><!-- injected --></thead>
+          <tbody><!-- injected --></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Fixed component breakdown (R/Pod/Day)</h2>
+        <table class="tariff-table" id="fixedTable">
+          <thead><!-- injected --></thead>
+          <tbody><!-- injected --></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Minimal styles if your CSS lacks a switch -->
+  <style>
+    .switch{position:relative;display:inline-block;width:44px;height:24px}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.2s;border-radius:24px}
+    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
+    input:checked + .slider{background:#0a7}
+    input:checked + .slider:before{transform:translateX(20px)}
+  </style>
+
+  <script defer src="compareTariffs.js"></script>
+</body>
+</html>
