@@ -1,5 +1,5 @@
 // compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
-// + contrast-safe text + hidden "Full breakdown comparison" card with pies
+// Contrast-safe labels + hidden "Full breakdown comparison" card with pies & legends
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
@@ -12,6 +12,7 @@ function cssVar(name, fallback) {
 const THEME = {
   primary:   cssVar('--primary', '#003896'),      // Eskom blue
   surface2:  cssVar('--surface-2', '#eef2f7'),
+  surface3:  cssVar('--surface-3', '#e6ecf5'),
   ink:       cssVar('--ink', '#1f2430'),
   inkMuted:  cssVar('--ink-muted', '#4a5160'),
   energy:    cssVar('--teal-100', '#598787'),     // energy split
@@ -32,6 +33,12 @@ function getTextColorForBg(rgb) {
   const [r, g, b] = nums;
   const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
   return luminance > 0.5 ? '#000' : '#fff';
+}
+
+/* Rough text width estimator (for SVG placement decisions) */
+function estimateTextWidth(text, fontSize = 12) {
+  // ~0.6em per character is a decent heuristic for UI sans fonts
+  return Math.max(6, text.length * fontSize * 0.6);
 }
 
 /* ---------- Tariff data (keep in sync with spuTariffsmart.js) ---------- */
@@ -65,7 +72,7 @@ const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
 const isFixedKey  = (k) => keyUnit(k) === "R/Pod/Day";
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
-const catOf = (tName) => tName.split(" ")[0]; // Businessrate, Homepower, Landrate, Homelight, Landlight
+const catOf = (tName) => tName.split(" ")[0];
 
 function energyCentsPerKwhTotal(t) {
   return Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0);
@@ -101,10 +108,10 @@ const FIXED_COMPONENT_KEYS = [
 function componentBreakdownRand(t, kwh, days) {
   const items = [];
   for (const k of ENERGY_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), amountR: (t[k]||0)/100 * kwh });
+    if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
   }
   for (const k of FIXED_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), amountR: (t[k]||0) * days });
+    if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), amountR: (t[k]||0) * days, kind:'fixed' });
   }
   return items;
 }
@@ -144,15 +151,13 @@ document.addEventListener("DOMContentLoaded", () => {
   dom.compTable   = q("componentTable").querySelector("tbody");
   dom.billTotalHdr= q("billTotalHdr");
 
-  // Inject the hidden "Full breakdown comparison" card + toggle button
-  injectBreakdownUI();
+  injectBreakdownUI(); // button + hidden card
 
   // Categories
   dom.catGroup.querySelectorAll("input.cat").forEach(cb => {
     cb.addEventListener("change", () => {
       if (cb.checked) state.categories.add(cb.value);
       else state.categories.delete(cb.value);
-      // Reset selections that no longer belong
       state.selected = state.selected.filter(name => state.categories.has(catOf(name)));
       renderOptions();
       updateSelCounter();
@@ -192,13 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial paint
   dom.vatLabel.textContent = "VAT: Inclusive";
   renderOptions();
-  autoPreselect(2); // show results immediately
+  autoPreselect(2);
   renderAll();
 });
 
 /* ---------- UI Injection for Breakdown Card ---------- */
 function injectBreakdownUI(){
-  // Button goes below Step 4 section
   const btnRow = document.createElement('div');
   btnRow.style.cssText = 'display:flex;justify-content:flex-end;margin:.75rem 0 1.25rem;';
   const toggleBtn = document.createElement('button');
@@ -207,12 +211,9 @@ function injectBreakdownUI(){
   toggleBtn.textContent = 'Show full breakdown comparison';
   btnRow.appendChild(toggleBtn);
 
-  // Insert before results card-grid
-  const content = document.querySelector('main .content') || document.querySelector('main');
   const grid = document.querySelector('.card-grid');
   grid.parentNode.insertBefore(btnRow, grid);
 
-  // Hidden card
   const card = document.createElement('section');
   card.className = 'card';
   card.style.display = 'none';
@@ -232,7 +233,7 @@ function injectBreakdownUI(){
               <th><em>Energy total</em></th>
               <th>Network capacity</th>
               <th>Generation capacity</th>
-              <th>Service & admin</th>
+              <th>Service &amp; admin</th>
               <th><em>Fixed total</em></th>
               <th>VAT</th>
               <th><strong>Total</strong></th>
@@ -241,12 +242,11 @@ function injectBreakdownUI(){
           <tbody><!-- injected --></tbody>
         </table>
       </div>
-      <div id="piesRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:1rem;"></div>
+      <div id="piesRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:1rem;"></div>
     </div>
   `;
   grid.parentNode.insertBefore(card, grid.nextSibling);
 
-  // Wire toggle
   toggleBtn.addEventListener('click', () => {
     state.breakdownOpen = !state.breakdownOpen;
     card.style.display = state.breakdownOpen ? '' : 'none';
@@ -254,7 +254,6 @@ function injectBreakdownUI(){
     if (state.breakdownOpen) renderBreakdown();
   });
 
-  // Keep refs
   dom.breakdownCard = card;
   dom.breakdownTableBody = card.querySelector('#breakdownTable tbody');
   dom.piesRow = card.querySelector('#piesRow');
@@ -287,7 +286,6 @@ function renderOptions() {
     dom.options.appendChild(wrap);
   });
 }
-
 function onSelectChange(cb) {
   const name = cb.value;
   if (cb.checked) {
@@ -304,11 +302,9 @@ function onSelectChange(cb) {
   updateSelCounter();
   renderAll();
 }
-
 function updateSelCounter() {
   dom.selCounter.textContent = `${state.selected.length}/${MAX_SELECT} selected`;
 }
-
 function autoPreselect(n) {
   const cbs = dom.options.querySelectorAll("input[type=checkbox]");
   let count = 0;
@@ -364,7 +360,7 @@ function renderBillTable(items) {
   });
 }
 
-/* ---------- lightweight SVG charts (theme-aware + contrast-aware text) ---------- */
+/* ---------- lightweight SVG helpers (theme-aware + contrast-aware text) ---------- */
 function svgEl(tag, attrs) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
   Object.entries(attrs || {}).forEach(([k,v]) => el.setAttribute(k, v));
@@ -391,7 +387,7 @@ function polarToCartesian(cx, cy, r, angleRad){
   return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
 
-/* Horizontal bar chart */
+/* Horizontal bar chart with smart label placement */
 function drawBarChart(container, labels, values, { unit = "" } = {}) {
   container.innerHTML = "";
   const w = container.clientWidth || 680;
@@ -403,17 +399,39 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
 
   const barColor = THEME.primary;
   const txtOnBar = getTextColorForBg(barColor);
+  const fontSize = 12;
 
   labels.forEach((lab, i) => {
     const y = pad + i * rowH;
     const val = values[i] || 0;
     const barW = ((w - pad*2) * val) / max;
+    const valueStr = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
 
     svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface2)); // track
     svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, barColor));            // bar
-    svg.appendChild(text(pad + 8, y + rowH*0.5, lab, { anchor: "start", size: 12, color: txtOnBar }));
-    const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
-    svg.appendChild(text(w - 8, y + rowH*0.5, display, { anchor: "end", size: 12, color: txtOnBar }));
+
+    // Decide label positions
+    const labW = estimateTextWidth(lab, fontSize);
+    const valW = estimateTextWidth(valueStr, fontSize);
+    const insidePadding = 10;
+
+    // Label (left)
+    if (barW > labW + insidePadding * 2) {
+      // Inside bar
+      svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: txtOnBar }));
+    } else {
+      // Outside, on the left over the light track
+      svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: THEME.inkMuted }));
+    }
+
+    // Value (right)
+    if (barW > valW + insidePadding * 2) {
+      // Inside bar, near bar end
+      svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: txtOnBar }));
+    } else {
+      // Outside, just after the bar
+      svg.appendChild(text(pad + barW + insidePadding, y + rowH*0.5, valueStr, { anchor: "start", size: fontSize, color: THEME.ink }));
+    }
   });
 
   container.appendChild(svg);
@@ -440,26 +458,33 @@ function drawStackedPctChart(container, labels, pairs) {
 
     svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, THEME.energy));
     svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, THEME.fixed));
-    svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: txtEnergy }));
-    svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: txtFixed }));
+
+    // Always readable: name to the left (dark), percentages to the right (dark)
+    svg.appendChild(text(pad - 6, y + rowH*0.5, `${lab}`, { anchor: "end", size: 12, color: THEME.inkMuted }));
+    svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: THEME.ink }));
   });
 
   container.appendChild(svg);
 }
 
-/* Donut pie for full breakdown */
+/* Donut pie for full breakdown + legend */
 function drawDonut(container, title, items) {
   // items: [{label, value, color}]
-  const w = 220, h = 220, cx = w/2, cy = h/2, r = 90, inner = 52;
+  const w = 260, h = 260, cx = w/2, cy = h/2 - 6, r = 92, inner = 54;
   const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
   let angle = -Math.PI/2;
+
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
 
   const svg = svgEl("svg", { width: w, height: h, style: 'display:block;margin:auto;' });
 
   items.forEach(it => {
-    const frac = (it.value||0)/sum;
+    if (!it.value) return;
+    const frac = it.value / sum;
     const end = angle + frac * Math.PI * 2;
-    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color });
+    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
     svg.appendChild(path);
     angle = end;
   });
@@ -468,12 +493,36 @@ function drawDonut(container, title, items) {
   const totalTxt = money(sum);
   svg.appendChild(text(cx, cy, totalTxt, { anchor: "middle", size: 12, color: THEME.ink }));
 
-  // Title below
-  const g = svgEl("g", {});
-  g.appendChild(text(cx, h-10, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
-  svg.appendChild(g);
+  // Title
+  svg.appendChild(text(cx, h-14, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
 
-  container.appendChild(svg);
+  wrap.appendChild(svg);
+
+  // Legend
+  const legend = document.createElement('div');
+  legend.style.display = 'grid';
+  legend.style.gridTemplateColumns = 'repeat(auto-fit, minmax(120px, 1fr))';
+  legend.style.gap = '.35rem .75rem';
+  legend.style.marginTop = '.35rem';
+
+  items.forEach(it => {
+    if (!it.value) return;
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.gap = '.5rem';
+    const sw = document.createElement('span');
+    sw.style.width = '12px'; sw.style.height = '12px';
+    sw.style.borderRadius = '3px'; sw.style.background = it.color;
+    const lbl = document.createElement('span');
+    lbl.style.fontSize = '.85rem'; lbl.style.color = THEME.inkMuted;
+    lbl.textContent = it.label;
+    row.appendChild(sw); row.appendChild(lbl);
+    legend.appendChild(row);
+  });
+
+  wrap.appendChild(legend);
+  container.appendChild(wrap);
 }
 
 /* ---------- chart renders ---------- */
@@ -482,7 +531,6 @@ function renderBillChart(items) {
   const totals = items.map(t => calcBill(t, state.kwh, state.days, state.vatInclusive).total);
   drawBarChart(dom.billChart, labels, totals, { unit: "R" });
 }
-
 function renderSplitChart(items) {
   const labels = items.map(t => t.Tariff);
   const pairs = items.map(t => {
@@ -505,54 +553,44 @@ function renderBreakdown(){
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  selectedTariffs.forEach((t, idx) => {
-    // Build table row
+  selectedTariffs.forEach((t) => {
     const comps = componentBreakdownRand(t, state.kwh, state.days);
-    const energyTotal = comps
-      .filter(c => ENERGY_COMPONENT_KEYS.some(k => c.label.startsWith(k.split(' [')[0])))
-      .reduce((a,c)=>a+c.amountR,0);
-    const fixedTotal = comps
-      .filter(c => FIXED_COMPONENT_KEYS.some(k => c.label.startsWith(k.split(' [')[0])))
-      .reduce((a,c)=>a+c.amountR,0);
+    const energyTotal = comps.filter(c => c.kind==='energy').reduce((a,c)=>a+c.amountR,0);
+    const fixedTotal  = comps.filter(c => c.kind==='fixed').reduce((a,c)=>a+c.amountR,0);
     const sub_excl = energyTotal + fixedTotal;
     const vat = state.vatInclusive ? sub_excl * VAT_RATE : 0;
     const total = state.vatInclusive ? sub_excl + vat : sub_excl;
 
-    const byLabel = (name) => {
-      const f = comps.find(c => c.label.toLowerCase().startsWith(name.toLowerCase()));
+    const findAmt = (prefix) => {
+      const f = comps.find(c => c.label.toLowerCase().startsWith(prefix.toLowerCase()));
       return f ? money(f.amountR) : '—';
     };
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${t.Tariff}</td>
-      <td>${byLabel('Active energy')}</td>
-      <td>${byLabel('Ancillary')}</td>
-      <td>${byLabel('Network demand')}</td>
-      <td>${byLabel('Electrification')}</td>
+      <td>${findAmt('Active energy')}</td>
+      <td>${findAmt('Ancillary')}</td>
+      <td>${findAmt('Network demand')}</td>
+      <td>${findAmt('Electrification')}</td>
       <td><em>${money(energyTotal)}</em></td>
-      <td>${byLabel('Network capacity')}</td>
-      <td>${byLabel('Generation capacity')}</td>
-      <td>${byLabel('Service')}</td>
+      <td>${findAmt('Network capacity')}</td>
+      <td>${findAmt('Generation capacity')}</td>
+      <td>${findAmt('Service')}</td>
       <td><em>${money(fixedTotal)}</em></td>
       <td>${state.vatInclusive ? money(vat) : '—'}</td>
       <td><strong>${money(total)}</strong></td>
     `;
     dom.breakdownTableBody.appendChild(tr);
 
-    // Donut pie per tariff
+    // Donut pie per tariff with legend
     const pieBox = document.createElement('div');
-    const colors = [
-      THEME.pie1, THEME.pie2, THEME.pie3, THEME.pie7,
-      THEME.pie4, THEME.pie5, THEME.pie6
-    ];
+    const colors = [THEME.pie1, THEME.pie2, THEME.pie3, THEME.pie7, THEME.pie4, THEME.pie5, THEME.pie6];
     const items = [];
-    // energy parts
     let ci = 0;
     ENERGY_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), value: (t[k]||0)/100*state.kwh, color: colors[ci++ % colors.length] });
     });
-    // fixed parts
     FIXED_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), value: (t[k]||0)*state.days, color: colors[ci++ % colors.length] });
     });
@@ -560,9 +598,7 @@ function renderBreakdown(){
       items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: '#222' });
     }
 
-    drawDonut(pieBox, t.Tariff, items.map(i => ({ label:i.label, value:i.value, color:i.color })));
+    drawDonut(pieBox, t.Tariff, items);
     dom.piesRow.appendChild(pieBox);
   });
 }
-
-
