@@ -1,23 +1,40 @@
 // compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
+// + contrast-safe text + hidden "Full breakdown comparison" card with pies
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
 
-// Helper to read CSS variables from style.css
-function cssVar(name, fallback){
+/* ---------- Theme helpers (pull from style.css, with fallbacks) ---------- */
+function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
+const THEME = {
+  primary:   cssVar('--primary', '#003896'),      // Eskom blue
+  surface2:  cssVar('--surface-2', '#eef2f7'),
+  ink:       cssVar('--ink', '#1f2430'),
+  inkMuted:  cssVar('--ink-muted', '#4a5160'),
+  energy:    cssVar('--teal-100', '#598787'),     // energy split
+  fixed:     cssVar('--orange-100', '#C97A00'),   // fixed split
+  pie1:      cssVar('--primary', '#003896'),
+  pie2:      cssVar('--blue-75', 'rgb(64,106,176)'),
+  pie3:      cssVar('--teal-100', '#598787'),
+  pie4:      cssVar('--orange-100', '#C97A00'),
+  pie5:      cssVar('--brown-100', 'rgb(131,114,91)'),
+  pie6:      cssVar('--green-100', 'rgb(13,176,43)'),
+  pie7:      cssVar('--surface-4', '#bfc9d9'),
+};
 
-// Eskom theme colours pulled from style.css (with safe fallbacks)
-const COLOR_PRIMARY   = cssVar('--primary', '#003896');       // Eskom blue
-const COLOR_BG_BAR    = cssVar('--surface-2', '#f1f3f7');     // chart background bars
-const COLOR_TEXT      = cssVar('--ink', '#1f2430');           // main text
-const COLOR_TEXT_MUTE = cssVar('--ink-muted', '#444');        // muted text
-const COLOR_ENERGY    = cssVar('--teal-100', '#598787');      // energy split colour
-const COLOR_FIXED     = cssVar('--orange-100', '#C97A00');    // fixed split colour
+/* Decide text colour for contrast on a given rgb(...) color */
+function getTextColorForBg(rgb) {
+  const nums = (rgb.match(/\d+/g) || []).map(Number);
+  if (nums.length < 3) return '#000';
+  const [r, g, b] = nums;
+  const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminance > 0.5 ? '#000' : '#fff';
+}
 
-// Keep this in sync with your spuTariffsmart.js
+/* ---------- Tariff data (keep in sync with spuTariffsmart.js) ---------- */
 const tariffData = [
   { "Tariff": "Businessrate 1", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 20.34, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 1.98 },
   { "Tariff": "Businessrate 2", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 30.21, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 2.95 },
@@ -43,7 +60,7 @@ const tariffData = [
   { "Tariff": "Landlight 60A", "Energy Charge [c/kWh]": 836 }
 ];
 
-// ---------- helpers ----------
+/* ---------- helpers ---------- */
 const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
 const isFixedKey  = (k) => keyUnit(k) === "R/Pod/Day";
@@ -68,16 +85,41 @@ function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
 function perDay(v){ return `R ${v.toFixed(2)} /Pod/Day`; }
 
-// ---------- state ----------
+/* Detailed components (labels align with your keys) */
+const ENERGY_COMPONENT_KEYS = [
+  "Energy Charge [c/kWh]",
+  "Ancillary Service Charge [c/kWh]",
+  "Netword Demand Charge [c/kWh]",
+  "Electrification and Rural Network Subsidy Charge [c/kWh]"
+];
+const FIXED_COMPONENT_KEYS = [
+  "Network Capacity Charge [R/Pod/Day]",
+  "Generation Capacity Charge [R/Pod/Day]",
+  "Service and Administration Charge [R/Pod/Day]"
+];
+
+function componentBreakdownRand(t, kwh, days) {
+  const items = [];
+  for (const k of ENERGY_COMPONENT_KEYS) {
+    if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), amountR: (t[k]||0)/100 * kwh });
+  }
+  for (const k of FIXED_COMPONENT_KEYS) {
+    if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), amountR: (t[k]||0) * days });
+  }
+  return items;
+}
+
+/* ---------- state ---------- */
 const state = {
   categories: new Set(["Homepower", "Homelight"]), // defaults
   selected: [], // tariff names
   vatInclusive: true,
   kwh: 500,
-  days: 30
+  days: 30,
+  breakdownOpen: false
 };
 
-// ---------- DOM ----------
+/* ---------- DOM ---------- */
 const dom = {};
 function q(id){ return document.getElementById(id); }
 
@@ -102,7 +144,10 @@ document.addEventListener("DOMContentLoaded", () => {
   dom.compTable   = q("componentTable").querySelector("tbody");
   dom.billTotalHdr= q("billTotalHdr");
 
-  // Wire category checkboxes
+  // Inject the hidden "Full breakdown comparison" card + toggle button
+  injectBreakdownUI();
+
+  // Categories
   dom.catGroup.querySelectorAll("input.cat").forEach(cb => {
     cb.addEventListener("change", () => {
       if (cb.checked) state.categories.add(cb.value);
@@ -111,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.selected = state.selected.filter(name => state.categories.has(catOf(name)));
       renderOptions();
       updateSelCounter();
-      renderResults();
+      renderAll();
     });
   });
 
@@ -120,20 +165,20 @@ document.addEventListener("DOMContentLoaded", () => {
     state.vatInclusive = dom.vatToggle.checked;
     dom.vatLabel.textContent = `VAT: ${state.vatInclusive ? "Inclusive" : "Exclusive"}`;
     dom.billTotalHdr.textContent = `Total (VAT ${state.vatInclusive ? "incl." : "excl."})`;
-    renderResults();
+    renderAll();
   });
 
   // Bill inputs
   dom.kwhInput.addEventListener("input", () => {
     state.kwh = Math.max(0, Number(dom.kwhInput.value) || 0);
-    renderResults();
+    renderAll();
   });
   dom.daysInput.addEventListener("input", () => {
     let d = Math.floor(Number(dom.daysInput.value) || 0);
     if (d < 1) d = 1; if (d > 31) d = 31;
     dom.daysInput.value = d;
     state.days = d;
-    renderResults();
+    renderAll();
   });
 
   // Clear selection
@@ -141,17 +186,81 @@ document.addEventListener("DOMContentLoaded", () => {
     state.selected = [];
     dom.options.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     updateSelCounter();
-    renderResults();
+    renderAll();
   });
 
   // Initial paint
   dom.vatLabel.textContent = "VAT: Inclusive";
   renderOptions();
   autoPreselect(2); // show results immediately
-  renderResults();
+  renderAll();
 });
 
-// ---------- options & selection ----------
+/* ---------- UI Injection for Breakdown Card ---------- */
+function injectBreakdownUI(){
+  // Button goes below Step 4 section
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;justify-content:flex-end;margin:.75rem 0 1.25rem;';
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn-ghost';
+  toggleBtn.type = 'button';
+  toggleBtn.textContent = 'Show full breakdown comparison';
+  btnRow.appendChild(toggleBtn);
+
+  // Insert before results card-grid
+  const content = document.querySelector('main .content') || document.querySelector('main');
+  const grid = document.querySelector('.card-grid');
+  grid.parentNode.insertBefore(btnRow, grid);
+
+  // Hidden card
+  const card = document.createElement('section');
+  card.className = 'card';
+  card.style.display = 'none';
+  card.innerHTML = `
+    <h2 style="margin-bottom:.4rem;">Full breakdown comparison</h2>
+    <p class="muted" style="margin-bottom:.8rem;">Detailed view of all charge components using your current kWh, days and VAT mode.</p>
+    <div id="breakdownWrap">
+      <div style="overflow-x:auto;">
+        <table class="tariff-table" id="breakdownTable">
+          <thead>
+            <tr>
+              <th>Tariff</th>
+              <th>Active energy</th>
+              <th>Ancillary service</th>
+              <th>Network demand</th>
+              <th>Electrification subsidy</th>
+              <th><em>Energy total</em></th>
+              <th>Network capacity</th>
+              <th>Generation capacity</th>
+              <th>Service & admin</th>
+              <th><em>Fixed total</em></th>
+              <th>VAT</th>
+              <th><strong>Total</strong></th>
+            </tr>
+          </thead>
+          <tbody><!-- injected --></tbody>
+        </table>
+      </div>
+      <div id="piesRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:1rem;"></div>
+    </div>
+  `;
+  grid.parentNode.insertBefore(card, grid.nextSibling);
+
+  // Wire toggle
+  toggleBtn.addEventListener('click', () => {
+    state.breakdownOpen = !state.breakdownOpen;
+    card.style.display = state.breakdownOpen ? '' : 'none';
+    toggleBtn.textContent = state.breakdownOpen ? 'Hide full breakdown comparison' : 'Show full breakdown comparison';
+    if (state.breakdownOpen) renderBreakdown();
+  });
+
+  // Keep refs
+  dom.breakdownCard = card;
+  dom.breakdownTableBody = card.querySelector('#breakdownTable tbody');
+  dom.piesRow = card.querySelector('#piesRow');
+}
+
+/* ---------- options & selection ---------- */
 function renderOptions() {
   dom.options.innerHTML = "";
   const cats = state.categories;
@@ -193,7 +302,7 @@ function onSelectChange(cb) {
     state.selected = state.selected.filter(n => n !== name);
   }
   updateSelCounter();
-  renderResults();
+  renderAll();
 }
 
 function updateSelCounter() {
@@ -213,16 +322,17 @@ function autoPreselect(n) {
   updateSelCounter();
 }
 
-// ---------- results ----------
-function renderResults() {
-  const selectedTariffs = state.selected
+/* ---------- results ---------- */
+function renderAll() {
+  const items = state.selected
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  renderComponentTable(selectedTariffs);
-  renderBillTable(selectedTariffs);
-  renderBillChart(selectedTariffs);
-  renderSplitChart(selectedTariffs);
+  renderComponentTable(items);
+  renderBillTable(items);
+  renderBillChart(items);
+  renderSplitChart(items);
+  if (state.breakdownOpen) renderBreakdown();
 }
 
 function renderComponentTable(items) {
@@ -254,16 +364,126 @@ function renderBillTable(items) {
   });
 }
 
-// ---------- lightweight SVG charts (theme-aware) ----------
+/* ---------- lightweight SVG charts (theme-aware + contrast-aware text) ---------- */
+function svgEl(tag, attrs) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs || {}).forEach(([k,v]) => el.setAttribute(k, v));
+  return el;
+}
+function rect(x,y,w,h,fill){ return svgEl("rect", { x, y, width:w, height:h, fill, rx:8, ry:8 }); }
+function text(x,y,str,{anchor="start",size=12,color=THEME.ink}={}) {
+  const t = svgEl("text", { x, y, "text-anchor": anchor, "font-size": size, fill: color, "dominant-baseline":"middle", "font-family":"system-ui, Segoe UI, Roboto, Arial" });
+  t.textContent = str;
+  return t;
+}
+function arcPath(cx, cy, r, startAngle, endAngle, innerR=0){
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end   = polarToCartesian(cx, cy, r, startAngle);
+  const arcFlag = endAngle - startAngle <= Math.PI ? 0 : 1;
+  if (innerR <= 0) {
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${arcFlag} 0 ${end.x} ${end.y} L ${cx} ${cy} Z`;
+  }
+  const start2 = polarToCartesian(cx, cy, innerR, endAngle);
+  const end2   = polarToCartesian(cx, cy, innerR, startAngle);
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${arcFlag} 0 ${end.x} ${end.y} L ${end2.x} ${end2.y} A ${innerR} ${innerR} 0 ${arcFlag} 1 ${start2.x} ${start2.y} Z`;
+}
+function polarToCartesian(cx, cy, r, angleRad){
+  return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
+}
+
+/* Horizontal bar chart */
+function drawBarChart(container, labels, values, { unit = "" } = {}) {
+  container.innerHTML = "";
+  const w = container.clientWidth || 680;
+  const h = container.clientHeight || 240;
+  const pad = 28;
+  const rowH = Math.max(18, Math.min(38, (h - pad*2) / Math.max(1, labels.length)));
+  const max = Math.max(1, Math.max(...values, 0));
+  const svg = svgEl("svg", { width: w, height: h });
+
+  const barColor = THEME.primary;
+  const txtOnBar = getTextColorForBg(barColor);
+
+  labels.forEach((lab, i) => {
+    const y = pad + i * rowH;
+    const val = values[i] || 0;
+    const barW = ((w - pad*2) * val) / max;
+
+    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface2)); // track
+    svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, barColor));            // bar
+    svg.appendChild(text(pad + 8, y + rowH*0.5, lab, { anchor: "start", size: 12, color: txtOnBar }));
+    const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
+    svg.appendChild(text(w - 8, y + rowH*0.5, display, { anchor: "end", size: 12, color: txtOnBar }));
+  });
+
+  container.appendChild(svg);
+}
+
+/* 100% stacked split (energy vs fixed) */
+function drawStackedPctChart(container, labels, pairs) {
+  container.innerHTML = "";
+  const w = container.clientWidth || 680;
+  const h = container.clientHeight || 200;
+  const pad = 28;
+  const rowH = Math.max(18, Math.min(34, (h - pad*2) / Math.max(1, labels.length)));
+  const svg = svgEl("svg", { width: w, height: h });
+
+  const txtEnergy = getTextColorForBg(THEME.energy);
+  const txtFixed  = getTextColorForBg(THEME.fixed);
+
+  labels.forEach((lab, i) => {
+    const y = pad + i * rowH;
+    const e = Math.max(0, Math.min(100, pairs[i].energyPct || 0));
+    const f = Math.max(0, 100 - e);
+    const eW = (w - pad*2) * (e / 100);
+    const fW = (w - pad*2) - eW;
+
+    svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, THEME.energy));
+    svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, THEME.fixed));
+    svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: txtEnergy }));
+    svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: txtFixed }));
+  });
+
+  container.appendChild(svg);
+}
+
+/* Donut pie for full breakdown */
+function drawDonut(container, title, items) {
+  // items: [{label, value, color}]
+  const w = 220, h = 220, cx = w/2, cy = h/2, r = 90, inner = 52;
+  const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
+  let angle = -Math.PI/2;
+
+  const svg = svgEl("svg", { width: w, height: h, style: 'display:block;margin:auto;' });
+
+  items.forEach(it => {
+    const frac = (it.value||0)/sum;
+    const end = angle + frac * Math.PI * 2;
+    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color });
+    svg.appendChild(path);
+    angle = end;
+  });
+
+  // Center label
+  const totalTxt = money(sum);
+  svg.appendChild(text(cx, cy, totalTxt, { anchor: "middle", size: 12, color: THEME.ink }));
+
+  // Title below
+  const g = svgEl("g", {});
+  g.appendChild(text(cx, h-10, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
+  svg.appendChild(g);
+
+  container.appendChild(svg);
+}
+
+/* ---------- chart renders ---------- */
 function renderBillChart(items) {
-  dom.billChart.innerHTML = "";
   const labels = items.map(t => t.Tariff);
   const totals = items.map(t => calcBill(t, state.kwh, state.days, state.vatInclusive).total);
   drawBarChart(dom.billChart, labels, totals, { unit: "R" });
 }
 
 function renderSplitChart(items) {
-  dom.splitChart.innerHTML = "";
   const labels = items.map(t => t.Tariff);
   const pairs = items.map(t => {
     const r = calcBill(t, state.kwh, state.days, false);
@@ -276,63 +496,73 @@ function renderSplitChart(items) {
   drawStackedPctChart(dom.splitChart, labels, pairs);
 }
 
-// SVG helpers
-function svgEl(tag, attrs) {
-  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  Object.entries(attrs || {}).forEach(([k,v]) => el.setAttribute(k, v));
-  return el;
-}
-function rect(x,y,w,h,fill){ return svgEl("rect", { x, y, width:w, height:h, fill, rx:6, ry:6 }); }
-function text(x,y,str,{anchor="start",size=12,color=COLOR_TEXT}={}) {
-  const t = svgEl("text", { x, y, "text-anchor": anchor, "font-size": size, fill: color, "dominant-baseline":"middle", "font-family":"system-ui, Segoe UI, Roboto, Arial" });
-  t.textContent = str;
-  return t;
-}
+/* ---------- Full breakdown card (hidden by default) ---------- */
+function renderBreakdown(){
+  dom.breakdownTableBody.innerHTML = "";
+  dom.piesRow.innerHTML = "";
 
-// Horizontal bar chart (SVG) — uses theme colours
-function drawBarChart(container, labels, values, { unit = "" } = {}) {
-  const w = container.clientWidth || 680;
-  const h = container.clientHeight || 240;
-  const pad = 32;
-  const rowH = Math.max(18, Math.min(38, (h - pad*2) / Math.max(1, labels.length)));
-  const max = Math.max(1, Math.max(...values, 0));
-  const svg = svgEl("svg", { width: w, height: h });
+  const selectedTariffs = state.selected
+    .map(name => tariffData.find(t => t.Tariff === name))
+    .filter(Boolean);
 
-  labels.forEach((lab, i) => {
-    const y = pad + i * rowH;
-    const val = values[i] || 0;
-    const barW = ((w - pad*2) * val) / max;
+  selectedTariffs.forEach((t, idx) => {
+    // Build table row
+    const comps = componentBreakdownRand(t, state.kwh, state.days);
+    const energyTotal = comps
+      .filter(c => ENERGY_COMPONENT_KEYS.some(k => c.label.startsWith(k.split(' [')[0])))
+      .reduce((a,c)=>a+c.amountR,0);
+    const fixedTotal = comps
+      .filter(c => FIXED_COMPONENT_KEYS.some(k => c.label.startsWith(k.split(' [')[0])))
+      .reduce((a,c)=>a+c.amountR,0);
+    const sub_excl = energyTotal + fixedTotal;
+    const vat = state.vatInclusive ? sub_excl * VAT_RATE : 0;
+    const total = state.vatInclusive ? sub_excl + vat : sub_excl;
 
-    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, COLOR_BG_BAR)); // bg
-    svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, COLOR_PRIMARY));      // bar
-    svg.appendChild(text(8, y + rowH*0.7, lab, { anchor: "start", size: 12, color: COLOR_TEXT_MUTE }));
-    const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
-    svg.appendChild(text(w - 8, y + rowH*0.7, display, { anchor: "end", size: 12, color: COLOR_TEXT }));
+    const byLabel = (name) => {
+      const f = comps.find(c => c.label.toLowerCase().startsWith(name.toLowerCase()));
+      return f ? money(f.amountR) : '—';
+    };
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${t.Tariff}</td>
+      <td>${byLabel('Active energy')}</td>
+      <td>${byLabel('Ancillary')}</td>
+      <td>${byLabel('Network demand')}</td>
+      <td>${byLabel('Electrification')}</td>
+      <td><em>${money(energyTotal)}</em></td>
+      <td>${byLabel('Network capacity')}</td>
+      <td>${byLabel('Generation capacity')}</td>
+      <td>${byLabel('Service')}</td>
+      <td><em>${money(fixedTotal)}</em></td>
+      <td>${state.vatInclusive ? money(vat) : '—'}</td>
+      <td><strong>${money(total)}</strong></td>
+    `;
+    dom.breakdownTableBody.appendChild(tr);
+
+    // Donut pie per tariff
+    const pieBox = document.createElement('div');
+    const colors = [
+      THEME.pie1, THEME.pie2, THEME.pie3, THEME.pie7,
+      THEME.pie4, THEME.pie5, THEME.pie6
+    ];
+    const items = [];
+    // energy parts
+    let ci = 0;
+    ENERGY_COMPONENT_KEYS.forEach(k => {
+      if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), value: (t[k]||0)/100*state.kwh, color: colors[ci++ % colors.length] });
+    });
+    // fixed parts
+    FIXED_COMPONENT_KEYS.forEach(k => {
+      if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), value: (t[k]||0)*state.days, color: colors[ci++ % colors.length] });
+    });
+    if (state.vatInclusive) {
+      items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: '#222' });
+    }
+
+    drawDonut(pieBox, t.Tariff, items.map(i => ({ label:i.label, value:i.value, color:i.color })));
+    dom.piesRow.appendChild(pieBox);
   });
-
-  container.appendChild(svg);
 }
 
-// 100% stacked split (energy vs fixed) — uses theme accent colours
-function drawStackedPctChart(container, labels, pairs) {
-  const w = container.clientWidth || 680;
-  const h = container.clientHeight || 200;
-  const pad = 32;
-  const rowH = Math.max(18, Math.min(34, (h - pad*2) / Math.max(1, labels.length)));
-  const svg = svgEl("svg", { width: w, height: h });
 
-  labels.forEach((lab, i) => {
-    const y = pad + i * rowH;
-    const e = Math.max(0, Math.min(100, pairs[i].energyPct || 0));
-    const f = Math.max(0, 100 - e);
-    const eW = (w - pad*2) * (e / 100);
-    const fW = (w - pad*2) - eW;
-
-    svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, COLOR_ENERGY));   // energy
-    svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, COLOR_FIXED)); // fixed
-    svg.appendChild(text(pad + 6, y + rowH*0.7, `${lab}`, { anchor: "start", size: 12, color: COLOR_TEXT_MUTE }));
-    svg.appendChild(text(w - 8, y + rowH*0.7, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: COLOR_TEXT }));
-  });
-
-  container.appendChild(svg);
-}
