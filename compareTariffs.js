@@ -1,7 +1,21 @@
-// compareTariffs.js — dependency-free, fast SVG charts, inter-category + up to 5 tariffs
+// compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
+
+// Helper to read CSS variables from style.css
+function cssVar(name, fallback){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+// Eskom theme colours pulled from style.css (with safe fallbacks)
+const COLOR_PRIMARY   = cssVar('--primary', '#003896');       // Eskom blue
+const COLOR_BG_BAR    = cssVar('--surface-2', '#f1f3f7');     // chart background bars
+const COLOR_TEXT      = cssVar('--ink', '#1f2430');           // main text
+const COLOR_TEXT_MUTE = cssVar('--ink-muted', '#444');        // muted text
+const COLOR_ENERGY    = cssVar('--teal-100', '#598787');      // energy split colour
+const COLOR_FIXED     = cssVar('--orange-100', '#C97A00');    // fixed split colour
 
 // Keep this in sync with your spuTariffsmart.js
 const tariffData = [
@@ -240,7 +254,7 @@ function renderBillTable(items) {
   });
 }
 
-// ---------- lightweight SVG charts ----------
+// ---------- lightweight SVG charts (theme-aware) ----------
 function renderBillChart(items) {
   dom.billChart.innerHTML = "";
   const labels = items.map(t => t.Tariff);
@@ -269,17 +283,17 @@ function svgEl(tag, attrs) {
   return el;
 }
 function rect(x,y,w,h,fill){ return svgEl("rect", { x, y, width:w, height:h, fill, rx:6, ry:6 }); }
-function text(x,y,str,{anchor="start",size=12,color="#000"}={}) {
+function text(x,y,str,{anchor="start",size=12,color=COLOR_TEXT}={}) {
   const t = svgEl("text", { x, y, "text-anchor": anchor, "font-size": size, fill: color, "dominant-baseline":"middle", "font-family":"system-ui, Segoe UI, Roboto, Arial" });
   t.textContent = str;
   return t;
 }
 
-// Simple horizontal bar chart (SVG)
+// Horizontal bar chart (SVG) — uses theme colours
 function drawBarChart(container, labels, values, { unit = "" } = {}) {
   const w = container.clientWidth || 680;
   const h = container.clientHeight || 240;
-  const pad = 30;
+  const pad = 32;
   const rowH = Math.max(18, Math.min(38, (h - pad*2) / Math.max(1, labels.length)));
   const max = Math.max(1, Math.max(...values, 0));
   const svg = svgEl("svg", { width: w, height: h });
@@ -287,23 +301,23 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
   labels.forEach((lab, i) => {
     const y = pad + i * rowH;
     const val = values[i] || 0;
-    const bw = ((w - pad*2) * val) / max;
+    const barW = ((w - pad*2) * val) / max;
 
-    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, "#f1f1f1")); // bg
-    svg.appendChild(rect(pad, y + rowH*0.2, bw, rowH*0.6, "#2b7"));           // bar
-    svg.appendChild(text(6, y + rowH*0.7, lab, { anchor: "start", size: 12, color: "#444" }));
+    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, COLOR_BG_BAR)); // bg
+    svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, COLOR_PRIMARY));      // bar
+    svg.appendChild(text(8, y + rowH*0.7, lab, { anchor: "start", size: 12, color: COLOR_TEXT_MUTE }));
     const display = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
-    svg.appendChild(text(w - 6, y + rowH*0.7, display, { anchor: "end", size: 12, color: "#111" }));
+    svg.appendChild(text(w - 8, y + rowH*0.7, display, { anchor: "end", size: 12, color: COLOR_TEXT }));
   });
 
   container.appendChild(svg);
 }
 
-// 100% stacked split (energy vs fixed)
+// 100% stacked split (energy vs fixed) — uses theme accent colours
 function drawStackedPctChart(container, labels, pairs) {
   const w = container.clientWidth || 680;
   const h = container.clientHeight || 200;
-  const pad = 30;
+  const pad = 32;
   const rowH = Math.max(18, Math.min(34, (h - pad*2) / Math.max(1, labels.length)));
   const svg = svgEl("svg", { width: w, height: h });
 
@@ -314,10 +328,10 @@ function drawStackedPctChart(container, labels, pairs) {
     const eW = (w - pad*2) * (e / 100);
     const fW = (w - pad*2) - eW;
 
-    svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, "#58a"));             // energy
-    svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, "#a85"));        // fixed
-    svg.appendChild(text(pad + 6, y + rowH*0.7, `${lab}`, { anchor: "start", size: 12, color: "#444" }));
-    svg.appendChild(text(w - 6, y + rowH*0.7, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: "#111" }));
+    svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, COLOR_ENERGY));   // energy
+    svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, COLOR_FIXED)); // fixed
+    svg.appendChild(text(pad + 6, y + rowH*0.7, `${lab}`, { anchor: "start", size: 12, color: COLOR_TEXT_MUTE }));
+    svg.appendChild(text(w - 8, y + rowH*0.7, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: COLOR_TEXT }));
   });
 
   container.appendChild(svg);
