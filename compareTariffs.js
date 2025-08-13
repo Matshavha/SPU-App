@@ -401,7 +401,6 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
   const svg = svgEl("svg", { width: w, height: h });
 
   const barColor = THEME.primary;
-  const txtOnBar = getTextColorForBg(barColor);
   const fontSize = 12;
 
   labels.forEach((lab, i) => {
@@ -419,15 +418,15 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
 
     // Name
     if (barW > labW + insidePadding * 2) {
-      svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: txtOnBar }));
+      svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: "#000" }));
     } else {
-      svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: THEME.inkMuted }));
+      svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: "#000" }));
     }
     // Value
     if (barW > valW + insidePadding * 2) {
-      svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: txtOnBar }));
+      svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: "#000" }));
     } else {
-      svg.appendChild(text(pad + barW + insidePadding, y + rowH*0.5, valueStr, { anchor: "start", size: fontSize, color: THEME.ink }));
+      svg.appendChild(text(pad + barW + insidePadding, y + rowH*0.5, valueStr, { anchor: "start", size: fontSize, color: "#000" }));
     }
   });
 
@@ -612,3 +611,4 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
