@@ -408,7 +408,7 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
     const y = pad + i * rowH;
     const val = values[i] || 0;
     const barW = ((w - pad*2) * val) / max;
-    const valueStr = unit === "R" ? R ${val.toFixed(2)} : val.toFixed(2);
+    const valueStr = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
 
     svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface2)); // track
     svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, barColor));            // bar
@@ -427,7 +427,7 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
     if (barW > valW + insidePadding * 2) {
       svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: txtOnBar }));
     } else {
-      svg.appendChild(text(pad + barW + insidePadding, y + rowH*0.5, valueStr, { anchor: "start", size: fontSize, color: "black" }));
+      svg.appendChild(text(pad + barW + insidePadding, y + rowH*0.5, valueStr, { anchor: "start", size: fontSize, color: THEME.ink }));
     }
   });
 
@@ -612,6 +612,7 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
 
 
 
