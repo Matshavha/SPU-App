@@ -1,189 +1,4 @@
-/* ========== Global Reset ========== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* ========== Base Layout ========== */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f4f4f4;
-}
-
-header .header-banner {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-}
-
-.content {
-  flex: 1;
-  padding: 2rem 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-h1 {
-  font-size: 1.8rem;
-  margin-bottom: 2rem;
-  color: #003399;
-}
-
-/* ========== Cards (Global) ========== */
-.card {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  transition: transform 0.2s ease;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-}
-
-.card i {
-  color: #003399;
-  margin-bottom: 0.8rem;
-}
-
-.card h2 {
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  color: #222;
-}
-
-.card p {
-  font-size: 0.95rem;
-  color: #555;
-}
-
-/* Grid of cards used across several pages */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  padding: 0 1rem;
-}
-
-/* ========== Home (index.html) vertical list ========== */
-.card-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-/* ========== Selectors / Inputs (shared) ========== */
-.selector label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 8px;
-}
-
-.selector select {
-  padding: 8px;
-  font-size: 1em;
-  width: 100%;
-  margin-bottom: 20px;
-  border: 1px solid #e3e3e3;
-  border-radius: 0.6rem;
-  background: #fff;
-}
-
-/* ========== Education block (legacy component) ========== */
-.education {
-  background: #f0f8ff;
-  border-left: 5px solid #004684;
-  padding: 15px;
-  margin-bottom: 25px;
-  border-radius: 8px;
-}
-
-/* ========== Tariff list cards (legacy grid) ========== */
-.tariff-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.tariff-card {
-  background-color: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s;
-}
-
-.tariff-card:hover {
-  transform: scale(1.02);
-}
-
-.tariff-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 0.9em;
-}
-
-.tariff-table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid #eee;
-}
-
-/* ========== Footer ========== */
-footer {
-  background-color: #003399;
-  height: 60px;
-  width: 100%;
-}
-
-/* ========== Back Button (top-left over header) ========== */
-.back-button {
-  position: absolute;
-  top: 25px;
-  left: 10px;
-  background: none;
-  color: white;
-  font-weight: bold;
-  font-size: 1rem;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 1000;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
-.back-button i {
-  font-size: 1.2rem;
-}
-
-/* Mobile tweaks for back button */
-@media (max-width: 600px) {
-  .back-button {
-    top: 4px;
-    left: 4px;
-  }
-  .back-button span {
-    display: none;
-  }
-}
-
-/* =========================================================
-   Understanding Your Tariff (spu-tariff.html) — Scoped styles
-   ========================================================= */
+/* ====== Understanding Your Tariff (PDF view + quick details) ====== */
 
 /* Two-column wrapper (PDF + Quick details) */
 .wrap {
@@ -193,180 +8,91 @@ footer {
   grid-template-columns: 1.2fr .8fr;
   gap: 1rem;
 }
-
-@media (max-width: 1000px) {
-  .wrap {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 1000px){
+  .wrap { grid-template-columns: 1fr; }
 }
 
 /* Viewer and Details containers */
 .viewer-card,
 .details-card {
-  background: #fff;
-  border: 1px solid #eef0f3;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 6px 24px rgba(0,0,0,.06);
+  background:#fff; border:1px solid #eef0f3; border-radius:14px; overflow:hidden;
+  box-shadow:0 6px 24px rgba(0,0,0,.06);
 }
-
-.viewer-head,
-.details-head {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  padding: .9rem 1rem;
-  background: #f8fafc;
-  border-bottom: 1px solid #edf0f4;
-  flex-wrap: wrap;
+.viewer-head, .details-head {
+  display:flex; align-items:center; gap:.75rem; padding: .9rem 1rem;
+  background:#f8fafc; border-bottom:1px solid #edf0f4;
+  flex-wrap:wrap;
 }
+.viewer-title, .details-title { font-weight:800; color:#0e1e5b; }
+.viewer-actions { margin-left:auto; display:flex; gap:.5rem; flex-wrap:wrap; }
 
-.viewer-title,
-.details-title {
-  font-weight: 800;
-  color: #0e1e5b;
-}
-
-.viewer-actions {
-  margin-left: auto;
-  display: flex;
-  gap: .5rem;
-  flex-wrap: wrap;
-}
-
-/* Reusable buttons */
 .btn {
-  border: 1px solid #dfe3eb;
-  background: #fff;
-  border-radius: .5rem;
-  padding: .5rem .75rem;
-  display: inline-flex;
-  gap: .45rem;
-  align-items: center;
-  text-decoration: none;
-  cursor: pointer;
-  font-size: .95rem;
+  border:1px solid #dfe3eb; background:#fff; border-radius:.5rem; padding:.5rem .75rem;
+  display:inline-flex; gap:.45rem; align-items:center; text-decoration:none; cursor:pointer; font-size:.95rem;
 }
+.btn.primary { background:#003399; color:#fff; border-color:#003399; }
+.btn.primary:hover { background:#001f70; }
 
-.btn.primary {
-  background: #003399;
-  color: #fff;
-  border-color: #003399;
-}
+/* PDF area (iframe first, embed fallback) */
+.pdf-wrap { width:100%; height:min(78vh, 900px); background:#f5f7fa; }
+.pdf-iframe, .pdf-object { width: 100%; height: 100%; border: 0; }
 
-.btn.primary:hover {
-  background: #001f70;
-}
+/* Details */
+.details-body { padding: .9rem 1rem; }
 
-/* PDF embed area (object with iframe fallback) */
-.pdf-wrap {
-  width: 100%;
-  height: min(72vh, 880px);
-  background: #f5f7fa;
-}
-
-/* Keep these separate so both fill container */
-.pdf-object {
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-.pdf-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  background: #fff;
-}
-
-/* Quick details area */
-.details-body {
-  padding: .9rem 1rem;
-}
-
-/* Use ID to avoid overriding global .card-grid */
-#detailCards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: .6rem;
-}
-
+/* Quick cards grid */
+#detailCards { display:grid; grid-template-columns:1fr; gap:.6rem; }
 .mini-card {
-  border: 1px solid #e8ebf1;
-  background: #fff;
-  border-radius: .6rem;
-  padding: .7rem .8rem;
-  cursor: pointer;
-  display: flex;
-  gap: .6rem;
-  align-items: center;
-  text-align: left;
+  border:1px solid #e8ebf1; background:#fff; border-radius:.6rem; padding:.7rem .8rem;
+  cursor:pointer; display:flex; gap:.6rem; align-items:center; text-align:left;
 }
-
-.mini-card:hover {
-  background: #f9fbff;
-}
-
-.mini-card i {
-  opacity: .75;
-}
+.mini-card:hover { background:#f9fbff; }
+.mini-card i { opacity: .75; }
 
 /* Expandable detail panel */
 .panel {
-  margin-top: .8rem;
-  border: 1px solid #e8ebf1;
-  border-radius: .6rem;
-  background: #fcfdff;
-  display: none;
+  margin-top:.8rem; border:1px solid #e8ebf1; border-radius:.6rem; background:#fcfdff;
+  display:none;
 }
-
-.panel.show {
-  display: block;
-}
-
+.panel.show { display:block; }
 .panel .panel-head {
-  padding: .7rem .8rem;
-  font-weight: 700;
-  border-bottom: 1px solid #e8ebf1;
-  background: #f8fbff;
+  padding:.7rem .8rem; font-weight:700; border-bottom:1px solid #e8ebf1; background:#f8fbff;
 }
+.panel .panel-body { padding:.8rem .9rem; }
+.panel table { width:100%; border-collapse: collapse; }
+.panel th, .panel td { border:1px solid #e8ebf1; padding:.5rem; text-align:left; }
 
-.panel .panel-body {
-  padding: .8rem .9rem;
-}
-
-.panel table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.panel th,
-.panel td {
-  border: 1px solid #e8ebf1;
-  padding: .5rem;
-  text-align: left;
-}
-
-/* Utility text */
-.muted {
-  color: #5c667a;
-  font-size: .92rem;
-}
-/* Spacing/typography for professional copy inside panels */
-.prose p { margin: 0 0 .6rem 0; line-height: 1.5; }
-.prose ul { margin: .4rem 0 .8rem 1.1rem; line-height: 1.5; }
-.prose li { margin: .15rem 0; }
+/* Professional text */
+.prose p { margin: 0 0 .7rem 0; line-height: 1.6; }
+.prose ul { margin: .4rem 0 .8rem 1.1rem; line-height: 1.6; }
+.prose li { margin: .2rem 0; }
 .tight-list { margin: .25rem 0 .5rem 1.1rem; }
 .tight-list li { margin: .15rem 0; }
 
 /* Rates controls + table */
-.rates-controls { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+.rates-controls { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr 1fr; 
+  gap: .75rem; 
+  margin-bottom: .75rem; 
+}
+@media (max-width: 680px){
+  .rates-controls { grid-template-columns: 1fr; }
+}
 .rates-row { display:flex; flex-direction: column; gap: .35rem; text-align: left; }
 .rates-row label { font-weight: 600; color: #223; }
 .rates-row select { padding: .55rem .6rem; border: 1px solid #e3e3e3; border-radius: .5rem; background: #fff; }
 .rates-table-wrap { overflow-x: auto; }
 
-/* Mobile-friendly PDF area tweaks */
-.pdf-wrap { width: 100%; height: min(78vh, 900px); background: #f5f7fa; }
-.pdf-object, .pdf-iframe { width: 100%; height: 100%; border: 0; }
+/* VAT toggle switch */
+.switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cfd7e6;transition:.2s;border-radius:24px}
+.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
+.switch input:checked + .slider{background:#0a7}
+.switch input:checked + .slider:before{transform:translateX(20px)}
+.vat-row{ display:flex; align-items:center; gap:.6rem; }
+.vat-label{ font-weight:600; color:#0e1e5b; }
+
+
 
