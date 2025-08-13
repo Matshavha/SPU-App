@@ -456,7 +456,7 @@ function drawStackedPctChart(container, labels, pairs) {
     svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, THEME.fixed));
 
     // Name inside the track at the very left → never clipped
-    svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: THEME.inkMuted }));
+    svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: THEME.ink }));
     // Percentages on the right
     svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: THEME.ink }));
   });
@@ -612,6 +612,7 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
 
 
 
