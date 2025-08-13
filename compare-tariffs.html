@@ -10,7 +10,8 @@
 </head>
 <body>
 
-  <a href="tariffs.html" class="back-button">
+  <!-- Back now goes to index.html -->
+  <a href="index.html" class="back-button">
     <i class="fas fa-arrow-left"></i>
     <span>Back</span>
   </a>
@@ -42,7 +43,7 @@
       <div style="margin-top:.5rem;display:flex;gap:.75rem;align-items:center;">
         <span id="selCounter" class="muted">0/5 selected</span>
         <span id="selWarning" class="muted" style="color:#b00;display:none;">You can select at most 5.</span>
-        <button id="clearSelBtn" class="btn" type="button" style="margin-left:auto;">Clear selection</button>
+        <button id="clearSelBtn" class="btn-ghost" type="button" style="margin-left:auto;">Clear selection</button>
       </div>
     </section>
 
@@ -116,22 +117,6 @@
       </ol>
     </section>
   </main>
-
-  <!-- Minimal styles for the toggle/tiles if not present in your CSS -->
-  <style>
-    .muted{color:#666;font-size:.9rem}
-    .switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle;margin-right:.5rem}
-    .switch input{opacity:0;width:0;height:0}
-    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.2s;border-radius:24px}
-    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
-    input:checked + .slider{background:#0a7}
-    input:checked + .slider:before{transform:translateX(20px)}
-    .option-tile{border:1px solid #e5e5e5;border-radius:.75rem;padding:.5rem .75rem;display:flex;gap:.5rem;align-items:center;background:#fff}
-    .option-tile input{transform:scale(1.1)}
-    .pill{font-size:.75rem;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:999px;padding:.05rem .5rem;margin-left:auto}
-    .btn{border:1px solid #ddd;background:#fafafa;border-radius:.5rem;padding:.4rem .7rem;cursor:pointer}
-    .btn:hover{background:#f2f2f2}
-  </style>
 
   <script defer src="compareTariffs.js"></script>
 </body>
