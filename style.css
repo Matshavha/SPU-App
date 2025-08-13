@@ -1,9 +1,11 @@
+/* ========== Global Reset ========== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ========== Base Layout ========== */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
@@ -33,26 +35,11 @@ h1 {
   color: #003399;
 }
 
-.card {
-  text-decoration: none;
-  color: inherit;
-}
-
+/* ========== Cards (Global) ========== */
 .card {
   display: block;
   text-decoration: none;
   color: inherit;
-}
-
-
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  padding: 0 1rem;
-}
-
-.card {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -80,6 +67,24 @@ h1 {
   color: #555;
 }
 
+/* Grid of cards used across several pages */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 0 1rem;
+}
+
+/* ========== Home (index.html) vertical list ========== */
+.card-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ========== Selectors / Inputs (shared) ========== */
 .selector label {
   font-weight: bold;
   display: block;
@@ -91,8 +96,12 @@ h1 {
   font-size: 1em;
   width: 100%;
   margin-bottom: 20px;
+  border: 1px solid #e3e3e3;
+  border-radius: 0.6rem;
+  background: #fff;
 }
 
+/* ========== Education block (legacy component) ========== */
 .education {
   background: #f0f8ff;
   border-left: 5px solid #004684;
@@ -101,6 +110,7 @@ h1 {
   border-radius: 8px;
 }
 
+/* ========== Tariff list cards (legacy grid) ========== */
 .tariff-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -131,17 +141,17 @@ h1 {
   border-bottom: 1px solid #eee;
 }
 
-
-/* Footer */
+/* ========== Footer ========== */
 footer {
   background-color: #003399;
   height: 60px;
   width: 100%;
 }
 
+/* ========== Back Button (top-left over header) ========== */
 .back-button {
   position: absolute;
-  top: 25px;               /* Default: desktop position */
+  top: 25px;
   left: 10px;
   background: none;
   color: white;
@@ -160,14 +170,185 @@ footer {
   font-size: 1.2rem;
 }
 
-/* For small screens (mobile) */
+/* Mobile tweaks for back button */
 @media (max-width: 600px) {
   .back-button {
-    top: 0.1px; /* Adjust this value as needed for mobile alignment */
-    left: 0.1px;
+    top: 4px;
+    left: 4px;
   }
-
   .back-button span {
     display: none;
   }
+}
+
+/* =========================================================
+   Understanding Your Tariff (spu-tariff.html) — Scoped styles
+   ========================================================= */
+
+/* Two-column wrapper (PDF + Quick details) */
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto 2rem;
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1000px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Viewer and Details containers */
+.viewer-card,
+.details-card {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0,0,0,.06);
+}
+
+.viewer-head,
+.details-head {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .9rem 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #edf0f4;
+  flex-wrap: wrap;
+}
+
+.viewer-title,
+.details-title {
+  font-weight: 800;
+  color: #0e1e5b;
+}
+
+.viewer-actions {
+  margin-left: auto;
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+/* Reusable buttons */
+.btn {
+  border: 1px solid #dfe3eb;
+  background: #fff;
+  border-radius: .5rem;
+  padding: .5rem .75rem;
+  display: inline-flex;
+  gap: .45rem;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: .95rem;
+}
+
+.btn.primary {
+  background: #003399;
+  color: #fff;
+  border-color: #003399;
+}
+
+.btn.primary:hover {
+  background: #001f70;
+}
+
+/* PDF embed area (object with iframe fallback) */
+.pdf-wrap {
+  width: 100%;
+  height: min(72vh, 880px);
+  background: #f5f7fa;
+}
+
+/* Keep these separate so both fill container */
+.pdf-object {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* Quick details area */
+.details-body {
+  padding: .9rem 1rem;
+}
+
+/* Use ID to avoid overriding global .card-grid */
+#detailCards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .6rem;
+}
+
+.mini-card {
+  border: 1px solid #e8ebf1;
+  background: #fff;
+  border-radius: .6rem;
+  padding: .7rem .8rem;
+  cursor: pointer;
+  display: flex;
+  gap: .6rem;
+  align-items: center;
+  text-align: left;
+}
+
+.mini-card:hover {
+  background: #f9fbff;
+}
+
+.mini-card i {
+  opacity: .75;
+}
+
+/* Expandable detail panel */
+.panel {
+  margin-top: .8rem;
+  border: 1px solid #e8ebf1;
+  border-radius: .6rem;
+  background: #fcfdff;
+  display: none;
+}
+
+.panel.show {
+  display: block;
+}
+
+.panel .panel-head {
+  padding: .7rem .8rem;
+  font-weight: 700;
+  border-bottom: 1px solid #e8ebf1;
+  background: #f8fbff;
+}
+
+.panel .panel-body {
+  padding: .8rem .9rem;
+}
+
+.panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.panel th,
+.panel td {
+  border: 1px solid #e8ebf1;
+  padding: .5rem;
+  text-align: left;
+}
+
+/* Utility text */
+.muted {
+  color: #5c667a;
+  font-size: .92rem;
 }
