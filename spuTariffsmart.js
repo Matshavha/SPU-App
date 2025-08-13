@@ -1,9 +1,12 @@
-// PDFs must live in assets/pdfs/ with these names.
+// Understanding Your Tariff — inline PDF, Quick details, Rates with VAT toggle.
+// Place PDFs at assets/pdfs/ with the exact names referenced below.
 
 const PDF_BASE = "assets/pdfs/";
-const STORAGE_LAST = "spu.lastTariffKey";
+const STORAGE_LAST     = "spu.lastTariffKey";
+const STORAGE_VAT      = "spu.vatInclusive";
+const VAT_RATE = 0.15;
 
-// ------- Base rate data (from your earlier tariff datasets) -------
+// ------- Rate data (from your earlier datasets) -------
 const RATE_DATA = {
   Businessrate: {
     variants: {
@@ -174,29 +177,29 @@ const RATE_DATA = {
   }
 };
 
-// ------- Quick info content (professionally formatted; no citations text) -------
+// ------- Quick info content (clean, professional copy) -------
 const QUICK_INFO = {
   Businessrate: {
     file: "Businessrate.pdf",
     title: "Businessrate — Non-Local Authority (Urban)",
     descriptionHTML: `
       <p><strong>Overview</strong></p>
-      <p>Businessrate applies to commercial and community-type supplies in urban areas up to 100&nbsp;kVA where no grid-tied generation is connected.</p>
+      <p>Businessrate is designed for commercial and community-type supplies in urban areas up to 100&nbsp;kVA where no grid-tied generation is connected.</p>
 
       <p><strong>How you’re charged</strong></p>
       <ul>
-        <li><em>Energy charges (c/kWh)</em>: Active Energy, Network Demand, Ancillary Service, Electrification &amp; Rural Network Subsidy (where applicable).</li>
-        <li><em>Fixed charges (R/POD/day)</em>: Network Capacity, Generation Capacity, Service &amp; Administration.</li>
+        <li><em>Energy charges (c/kWh)</em>: Active Energy, Network Demand, Ancillary Service, and (where applicable) Electrification &amp; Rural Network Subsidy.</li>
+        <li><em>Fixed charges (R/POD/day)</em>: Network Capacity, Generation Capacity, and Service &amp; Administration.</li>
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>For prepaid options, energy-based charges may be combined for vending; daily fixed charges may also be combined. Time-of-Use is required if grid-tied generation is connected.</p>
+      <p>For prepaid options, energy-based charges may be combined for vending and daily fixed charges may also be combined. Time-of-Use applies where grid-tied generation is present.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
-        <li><strong>Businessrate 1</strong>: 1-phase 16&nbsp;kVA (80&nbsp;A); 2-phase 32&nbsp;kVA (80&nbsp;A/phase); 3-phase 25&nbsp;kVA (40&nbsp;A/phase)</li>
-        <li><strong>Businessrate 2</strong>: 2-phase 64&nbsp;kVA (150&nbsp;A/phase); 3-phase 50&nbsp;kVA (80&nbsp;A/phase)</li>
-        <li><strong>Businessrate 3</strong>: 2-phase 100&nbsp;kVA (225&nbsp;A/phase); 3-phase 100&nbsp;kVA (150&nbsp;A/phase)</li>
+        <li><strong>Businessrate 1</strong>: 1-phase 16&nbsp;kVA (80&nbsp;A), 2-phase 32&nbsp;kVA (80&nbsp;A/phase), 3-phase 25&nbsp;kVA (40&nbsp;A/phase)</li>
+        <li><strong>Businessrate 2</strong>: 2-phase 64&nbsp;kVA (150&nbsp;A/phase), 3-phase 50&nbsp;kVA (80&nbsp;A/phase)</li>
+        <li><strong>Businessrate 3</strong>: 2-phase 100&nbsp;kVA (225&nbsp;A/phase), 3-phase 100&nbsp;kVA (150&nbsp;A/phase)</li>
         <li><strong>Businessrate 4</strong> (conv./prepaid): same sizes as BR1</li>
       </ul>
     `
@@ -207,7 +210,7 @@ const QUICK_INFO = {
     title: "Homepower — Non-Local Authority (Residential)",
     descriptionHTML: `
       <p><strong>Overview</strong></p>
-      <p>Homepower is the urban residential suite (also applied to comparable uses such as schools or clinics) for supplies up to 100&nbsp;kVA.</p>
+      <p>Homepower is the residential suite for urban supplies up to 100&nbsp;kVA. It can also apply to comparable uses such as schools and clinics.</p>
 
       <p><strong>How you’re charged</strong></p>
       <ul>
@@ -216,13 +219,13 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>On prepaid configurations, energy components are combined for vending, and daily fixed components are combined.</p>
+      <p>Prepaid configurations combine energy components for vending, and daily fixed components are combined.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
-        <li><strong>Homepower 1</strong>: 2-phase 32&nbsp;kVA (80&nbsp;A/phase); 3-phase 25&nbsp;kVA (40&nbsp;A/phase)</li>
-        <li><strong>Homepower 2</strong>: 2-phase 64&nbsp;kVA (150&nbsp;A/phase); 3-phase 50&nbsp;kVA (80&nbsp;A/phase)</li>
-        <li><strong>Homepower 3</strong>: 2-phase 100&nbsp;kVA (225&nbsp;A/phase); 3-phase 100&nbsp;kVA (150&nbsp;A/phase)</li>
+        <li><strong>Homepower 1</strong>: 2-phase 32&nbsp;kVA (80&nbsp;A/phase), 3-phase 25&nbsp;kVA (40&nbsp;A/phase)</li>
+        <li><strong>Homepower 2</strong>: 2-phase 64&nbsp;kVA (150&nbsp;A/phase), 3-phase 50&nbsp;kVA (80&nbsp;A/phase)</li>
+        <li><strong>Homepower 3</strong>: 2-phase 100&nbsp;kVA (225&nbsp;A/phase), 3-phase 100&nbsp;kVA (150&nbsp;A/phase)</li>
         <li><strong>Homepower 4</strong>: 1-phase 16&nbsp;kVA (80&nbsp;A/phase)</li>
       </ul>
     `
@@ -238,14 +241,14 @@ const QUICK_INFO = {
       <p><strong>How you’re charged</strong></p>
       <ul>
         <li><em>Energy charges (c/kWh)</em>: Active Energy, Network Demand, Ancillary Service.</li>
-        <li><em>Fixed charges</em>: Network Capacity &amp; Generation Capacity (often on kVA/month), and Service &amp; Administration (R/POD/day).</li>
+        <li><em>Fixed charges</em>: Network Capacity &amp; Generation Capacity (often on kVA/month), plus Service &amp; Administration (R/POD/day).</li>
       </ul>
 
       <p><strong>Good to know</strong></p>
       <p>Network Capacity may be based on NMD or measured maximum demand.</p>
     `,
     supplyHTML: `
-      <p>Supply is bulk/metered at development level. Capacity charges typically follow NMD/measured demand arrangements.</p>
+      <p>Supply is bulk at development level. Capacity charges typically follow NMD/measured demand arrangements.</p>
     `
   },
 
@@ -267,7 +270,7 @@ const QUICK_INFO = {
     supplyHTML: `
       <ul class="tight-list">
         <li><strong>Homelight 20A</strong>: 1-phase 20&nbsp;A</li>
-        <li><strong>Homelight 60A</strong>: 1-phase 60&nbsp;A (plus smart-meter 80&nbsp;A prepayment / legacy 80&nbsp;A post-paid)</li>
+        <li><strong>Homelight 60A</strong>: 1-phase 60&nbsp;A (smart-meter 80&nbsp;A prepayment and legacy 80&nbsp;A post-paid also exist)</li>
       </ul>
     `
   },
@@ -321,7 +324,7 @@ const QUICK_INFO = {
     title: "Municrate — Local Authority (Urban)",
     descriptionHTML: `
       <p><strong>Overview</strong></p>
-      <p>Local-authority urban suite.</p>
+      <p>Local-authority urban suite for smaller supplies.</p>
 
       <p><strong>How you’re charged</strong></p>
       <ul>
@@ -330,7 +333,7 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>Time-of-Use applies where grid-tied generation is present.</p>
+      <p>Time-of-Use applies where grid-tied generation is connected.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -343,19 +346,23 @@ const QUICK_INFO = {
   }
 };
 
-// --- Helpers ---
+// --- DOM helpers / state ---
 const els = {};
 function $(id){ return document.getElementById(id); }
 const unitOf = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergy = (k) => unitOf(k) === "c/kWh";
 const isFixed  = (k) => unitOf(k) === "R/Pod/Day";
 
+const state = {
+  vatInclusive: JSON.parse(localStorage.getItem(STORAGE_VAT) ?? "true")
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   els.select = $("tariffSelect");
   els.wrap   = $("contentWrap");
   els.title  = $("viewerTitle");
-  els.embed  = $("pdfEmbed");
   els.iframe = $("pdfFrame");
+  els.embed  = $("pdfEmbed");
   els.view   = $("viewBtn");
   els.dl     = $("downloadBtn");
 
@@ -383,32 +390,26 @@ function loadTariff(key){
   els.wrap.style.display = "";
   els.title.textContent = meta.title;
 
-  // Inline PDF (try <embed> first; if it fails to attach, show iframe fallback)
+  // Inline PDF — try iframe first, fallback to embed if needed
   const clean = PDF_BASE + meta.file;
-  const url   = clean + "#toolbar=1&navpanes=0&view=FitH";
-  try {
-    els.embed.src = url;
-    els.embed.removeAttribute("hidden");
-    els.iframe.setAttribute("hidden", "true");
-    // If the embed doesn't load within a short while (mobile oddities), use iframe
-    setTimeout(() => {
-      // Heuristic: if embed has zero size (render fail), flip to iframe
-      const bb = els.embed.getBoundingClientRect();
-      if (bb.width < 10 || bb.height < 10) {
-        els.iframe.src = clean + "#zoom=page-width";
-        els.iframe.removeAttribute("hidden");
-      }
-    }, 250);
-  } catch {
-    els.iframe.src = clean + "#zoom=page-width";
-    els.iframe.removeAttribute("hidden");
-  }
+  const urlIframe = clean + "#view=FitH";
+  els.iframe.src = urlIframe;
+  els.iframe.removeAttribute("hidden");
+
+  // If iframe fails to render (rare), unhide <embed> as fallback
+  setTimeout(() => {
+    const bb = els.iframe.getBoundingClientRect();
+    if (bb.width < 10 || bb.height < 10) {
+      els.embed.src = clean + "#toolbar=1&navpanes=0&view=FitH";
+      els.embed.removeAttribute("hidden");
+    }
+  }, 250);
 
   els.view.href = clean;
   els.dl.href   = clean;
   els.dl.setAttribute("download", meta.file);
 
-  // Build 3 quick cards: Description, Supply Sizes, Rates
+  // Build three quick cards
   els.cardsWrap.innerHTML = "";
   createMiniCard("fa-clipboard-list", "Tariff Description", () => showPanel("Tariff Description", meta.descriptionHTML, true));
   createMiniCard("fa-plug", "Supply Sizes", () => showPanel("Supply Sizes", meta.supplyHTML, true));
@@ -433,36 +434,51 @@ function showPanel(title, html, formatted=false){
   els.panel.classList.add("show");
 }
 
-// ----- Rates panel -----
+// ----- Rates panel with VAT toggle -----
 function showRatesPanel(tariffKey){
   const rd = RATE_DATA[tariffKey];
+  els.panelT.textContent = "Rates";
   if (!rd) {
-    els.panelT.textContent = "Rates";
     els.panelB.innerHTML = `<p>No rate data available for this tariff.</p>`;
     els.panel.classList.add("show");
     return;
   }
 
-  // Build controls
+  // Build controls (variant, type, VAT toggle)
   const variants = Object.keys(rd.variants);
-  const charges = ["All", "Energy Charges (c/kWh)", "Fixed Charges (R/POD/day)"];
+  const charges = ["All", "Energy charges (c/kWh)", "Fixed charges (R/POD/day)"];
 
   const controls = document.createElement("div");
   controls.className = "rates-controls";
   controls.innerHTML = `
     <div class="rates-row">
-      <label>Variant</label>
+      <label for="rateVariant">Variant</label>
       <select id="rateVariant">${variants.map(v => `<option value="${v}">${v}</option>`).join("")}</select>
     </div>
     <div class="rates-row">
-      <label>Charge type</label>
+      <label for="rateType">Charge type</label>
       <select id="rateType">${charges.map(c => `<option value="${c}">${c}</option>`).join("")}</select>
+    </div>
+    <div class="rates-row vat-row">
+      <label>VAT mode</label>
+      <label class="switch" title="Toggle VAT inclusive/exclusive">
+        <input type="checkbox" id="vatToggle" ${state.vatInclusive ? "checked" : ""} />
+        <span class="slider"></span>
+      </label>
+      <span id="vatModeLabel" class="vat-label">VAT: ${state.vatInclusive ? "Inclusive" : "Exclusive"}</span>
     </div>
   `;
 
   const tableWrap = document.createElement("div");
   tableWrap.className = "rates-table-wrap";
-  tableWrap.innerHTML = `<table class="tariff-table"><thead><tr><th>Charge</th><th>Rate</th></tr></thead><tbody id="ratesTbody"></tbody></table>`;
+  tableWrap.innerHTML = `
+    <table class="tariff-table">
+      <thead>
+        <tr><th>Charge</th><th>Rate</th></tr>
+      </thead>
+      <tbody id="ratesTbody"></tbody>
+    </table>
+  `;
 
   const renderTable = () => {
     const variant = document.getElementById("rateVariant").value;
@@ -475,8 +491,8 @@ function showRatesPanel(tariffKey){
 
     const filtered = entries.filter(([k]) => {
       if (type.startsWith("All")) return true;
-      if (type.startsWith("Energy")) return isEnergy(k);
-      if (type.startsWith("Fixed"))  return isFixed(k);
+      if (type.toLowerCase().startsWith("energy")) return isEnergy(k);
+      if (type.toLowerCase().startsWith("fixed"))  return isFixed(k);
       return true;
     });
 
@@ -488,29 +504,52 @@ function showRatesPanel(tariffKey){
     for (const [k, v] of filtered) {
       const u = unitOf(k);
       const label = k.split("[")[0].trim();
-      const display = u === "c/kWh" ? `${Number(v).toFixed(2)} c/kWh`
-                   : u === "R/Pod/Day" ? `R ${Number(v).toFixed(2)} /POD/Day`
-                   : `R ${Number(v).toFixed(2)}`;
+
+      let val = Number(v);
+      if (state.vatInclusive) {
+        val = val * (1 + VAT_RATE);
+      }
+
+      let display = "";
+      if (u === "c/kWh") {
+        display = `${val.toFixed(2)} c/kWh`;
+      } else if (u === "R/Pod/Day") {
+        display = `R ${val.toFixed(2)} /POD/Day`;
+      } else {
+        display = `R ${val.toFixed(2)}`;
+      }
+
       const tr = document.createElement("tr");
       tr.innerHTML = `<td>${label}</td><td>${display}</td>`;
       tbody.appendChild(tr);
     }
   };
 
-  // Wire and initial render
+  // Wire events
   setTimeout(() => {
     const vSel = controls.querySelector("#rateVariant");
     const tSel = controls.querySelector("#rateType");
+    const vatToggle = controls.querySelector("#vatToggle");
+    const vatLabel  = controls.querySelector("#vatModeLabel");
+
     vSel.addEventListener("change", renderTable);
     tSel.addEventListener("change", renderTable);
+    vatToggle.addEventListener("change", () => {
+      state.vatInclusive = vatToggle.checked;
+      localStorage.setItem(STORAGE_VAT, JSON.stringify(state.vatInclusive));
+      vatLabel.textContent = `VAT: ${state.vatInclusive ? "Inclusive" : "Exclusive"}`;
+      renderTable();
+    });
+
     renderTable();
   });
 
-  els.panelT.textContent = "Rates";
   els.panelB.innerHTML = "";
   els.panelB.appendChild(controls);
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
+
+
 
 
