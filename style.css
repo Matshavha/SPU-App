@@ -195,7 +195,7 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 .back-button:hover{ background: rgba(0,0,0,.35); }
 .back-button i{ font-size:1.2rem; }
 @media (max-width:600px){
-  .back-button{ top:-1.5px; left:-2.5px; }
+  .back-button{ top:-1px; left:-1px; }
   .back-button span{ display:none; }
 }
 
@@ -339,6 +339,7 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 .bg-green-25{ background: var(--green-25) !important; }
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
+
 
 
 
