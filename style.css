@@ -1,98 +1,341 @@
-/* ====== Understanding Your Tariff (PDF view + quick details) ====== */
+/* =====================================================================
+   Eskom SPU App — Global Styles
+   Brand palette applied from provided Eskom colour chart
+   ===================================================================== */
 
-/* Two-column wrapper (PDF + Quick details) */
-.wrap {
-  max-width: 1100px;
-  margin: 0 auto 2rem;
-  display: grid;
-  grid-template-columns: 1.2fr .8fr;
-  gap: 1rem;
-}
-@media (max-width: 1000px){
-  .wrap { grid-template-columns: 1fr; }
+/* -------------------- CSS Variables (Brand Tokens) ------------------- */
+:root{
+  /* Primary (Pantone 287 C) + tints */
+  --eskom-blue-100: rgb(0,56,150);
+  --eskom-blue-75:  rgb(64,106,176);
+  --eskom-blue-50:  rgb(127,155,202);
+  --eskom-blue-25:  rgb(191,205,229);
+
+  /* Warm grey (Pantone 8004 C) + tints */
+  --warm-grey-100:  rgb(131,114,91);
+  --warm-grey-75:   rgb(162,149,132);
+  --warm-grey-50:   rgb(193,184,173);
+  --warm-grey-25:   rgb(224,219,214);
+
+  /* Secondary / accent colours + tints */
+  --brick-100:      rgb(150,51,15);   /* Pantone 174 C */
+  --brick-75:       rgb(176,102,75);
+  --brick-50:       rgb(202,153,135);
+  --brick-25:       rgb(229,204,195);
+
+  --green-100:      rgb(13,176,43);   /* Pantone 361 C */
+  --green-75:       rgb(73,196,96);
+  --green-50:       rgb(134,215,149);
+  --green-25:       rgb(194,235,202);
+
+  --orange-100:     rgb(201,122,0);   /* Pantone 1385 C */
+  --orange-75:      rgb(214,155,64);
+  --orange-50:      rgb(228,188,127);
+  --orange-25:      rgb(241,222,191);
+
+  --teal-100:       rgb(89,135,135);  /* Pantone 7475 C */
+  --teal-75:        rgb(130,165,165);
+  --teal-50:        rgb(172,195,195);
+  --teal-25:        rgb(213,225,225);
+
+  /* Neutrals & UI tokens */
+  --bg:             #f6f7fb;
+  --surface:        #ffffff;
+  --surface-2:      #f8fafc;
+  --ink:            #1f2430;
+  --ink-muted:      #5c667a;
+  --line:           #e8ebf1;
+  --shadow:         0 6px 24px rgba(0,0,0,.06);
+  --focus:          var(--green-100);
+
+  /* App accents derived from brand */
+  --primary:        var(--eskom-blue-100);
+  --primary-hover:  #002a7a; /* darker hover */
+  --primary-soft:   var(--eskom-blue-25);
+  --accent-ok:      var(--green-100);
+  --accent-warn:    var(--orange-100);
+  --accent-info:    var(--teal-100);
 }
 
-/* Viewer and Details containers */
-.viewer-card,
-.details-card {
-  background:#fff; border:1px solid #eef0f3; border-radius:14px; overflow:hidden;
-  box-shadow:0 6px 24px rgba(0,0,0,.06);
+/* --------------------------- Reset & Base ---------------------------- */
+*{ margin:0; padding:0; box-sizing:border-box; }
+html, body{ height:100%; }
+body{
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  display:flex; flex-direction:column; min-height:100vh;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
-.viewer-head, .details-head {
-  display:flex; align-items:center; gap:.75rem; padding: .9rem 1rem;
-  background:#f8fafc; border-bottom:1px solid #edf0f4;
-  flex-wrap:wrap;
+img{ max-width:100%; display:block; }
+a{ color:inherit; text-decoration:none; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible{
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius:8px;
 }
-.viewer-title, .details-title { font-weight:800; color:#0e1e5b; }
-.viewer-actions { margin-left:auto; display:flex; gap:.5rem; flex-wrap:wrap; }
+.hidden { display:none !important; }
 
-.btn {
-  border:1px solid #dfe3eb; background:#fff; border-radius:.5rem; padding:.5rem .75rem;
-  display:inline-flex; gap:.45rem; align-items:center; text-decoration:none; cursor:pointer; font-size:.95rem;
+/* ------------------------- Layout Containers ------------------------ */
+header .header-banner{ width:100%; height:auto; display:block; }
+.content{
+  flex:1;
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
 }
-.btn.primary { background:#003399; color:#fff; border-color:#003399; }
-.btn.primary:hover { background:#001f70; }
-
-/* PDF area (iframe first, embed fallback) */
-.pdf-wrap { width:100%; height:min(78vh, 900px); background:#f5f7fa; }
-.pdf-iframe, .pdf-object { width: 100%; height: 100%; border: 0; }
-
-/* Details */
-.details-body { padding: .9rem 1rem; }
-
-/* Quick cards grid */
-#detailCards { display:grid; grid-template-columns:1fr; gap:.6rem; }
-.mini-card {
-  border:1px solid #e8ebf1; background:#fff; border-radius:.6rem; padding:.7rem .8rem;
-  cursor:pointer; display:flex; gap:.6rem; align-items:center; text-align:left;
+h1{
+  font-size: clamp(1.6rem, 2vw + 1rem, 2rem);
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+  letter-spacing:.2px;
 }
-.mini-card:hover { background:#f9fbff; }
-.mini-card i { opacity: .75; }
 
-/* Expandable detail panel */
-.panel {
-  margin-top:.8rem; border:1px solid #e8ebf1; border-radius:.6rem; background:#fcfdff;
-  display:none;
+/* ----------------------------- Cards -------------------------------- */
+.card{
+  display:block;
+  background: var(--surface);
+  border:1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.25rem 1.25rem;
+  box-shadow: var(--shadow);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  color:inherit;
+  text-align:left;
 }
-.panel.show { display:block; }
-.panel .panel-head {
-  padding:.7rem .8rem; font-weight:700; border-bottom:1px solid #e8ebf1; background:#f8fbff;
-}
-.panel .panel-body { padding:.8rem .9rem; }
-.panel table { width:100%; border-collapse: collapse; }
-.panel th, .panel td { border:1px solid #e8ebf1; padding:.5rem; text-align:left; }
+.card:hover{ transform: translateY(-4px); border-color: var(--eskom-blue-50); }
+.card i{ color: var(--primary); margin-right:.5rem; }
+.card h2{ font-size:1.1rem; margin:.25rem 0 .35rem; color:#222; }
+.card p{ font-size:.95rem; color: var(--ink-muted); }
 
-/* Professional text */
-.prose p { margin: 0 0 .7rem 0; line-height: 1.6; }
-.prose ul { margin: .4rem 0 .8rem 1.1rem; line-height: 1.6; }
-.prose li { margin: .2rem 0; }
-.tight-list { margin: .25rem 0 .5rem 1.1rem; }
-.tight-list li { margin: .15rem 0; }
+/* Grid of cards (used across pages) */
+.card-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+  gap: 1.2rem;
+  padding: 0 1rem;
+}
+
+/* Home: vertical stack */
+.card-vertical{
+  display:flex; flex-direction:column; gap:1rem;
+  max-width: 900px; margin:0 auto;
+}
+.card--home{
+  display:flex; align-items:center; gap: .9rem;
+}
+.card--home i{
+  width:42px; height:42px; display:inline-grid; place-items:center;
+  border-radius:10px; color:#fff;
+  background: var(--primary);
+}
+/* Accent helpers for home cards */
+.accent-green i{ background: var(--green-100); }
+.accent-orange i{ background: var(--orange-100); }
+.accent-teal i{ background: var(--teal-100); }
+
+/* ----------------------------- Tables ------------------------------- */
+table{ width:100%; border-collapse:collapse; }
+.tariff-table{ font-size:.95rem; margin-top:.5rem; }
+.tariff-table th, .tariff-table td{
+  border:1px solid var(--line);
+  padding:.55rem .6rem; text-align:left;
+}
+.tariff-table thead th{ background: var(--surface-2); font-weight:700; }
+
+/* ----------------------------- Selector ----------------------------- */
+.selector{ max-width:1100px; margin: 1rem auto .75rem; text-align:left; }
+.selector label{ font-weight:700; display:block; margin-bottom:.4rem; color:#1c2a64; }
+.selector select{
+  width:100%;
+  padding:.7rem .8rem;
+  border:1px solid #e3e3e3;
+  border-radius:.6rem;
+  background:#fff;
+}
+
+/* ---------------------------- Education ----------------------------- */
+.education{
+  background: var(--eskom-blue-25);
+  border-left: 6px solid var(--primary);
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  text-align:left;
+}
+
+/* -------------------------- Tariff Lists ---------------------------- */
+.tariff-cards-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+  gap:20px;
+}
+.tariff-card{
+  background:#fff; border-radius:12px; padding:16px;
+  box-shadow: var(--shadow); transition: transform .2s;
+}
+.tariff-card:hover{ transform: scale(1.02); }
+
+/* ----------------------------- Footer ------------------------------- */
+footer{ background: var(--primary); height: 60px; width:100%; }
+
+/* ---------------------------- Back Button --------------------------- */
+.back-button{
+  position:absolute; top: 18px; left: 10px;
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(2px);
+  color:#fff;
+  font-weight:700; font-size:1rem;
+  text-decoration:none;
+  display:flex; align-items:center; gap:6px;
+  z-index:1000; padding:6px 10px; border-radius:8px;
+  transition: background .2s ease;
+}
+.back-button:hover{ background: rgba(0,0,0,.35); }
+.back-button i{ font-size:1.2rem; }
+@media (max-width:600px){
+  .back-button{ top:6px; left:6px; }
+  .back-button span{ display:none; }
+}
+
+/* =====================================================================
+   Understanding Your Tariff — PDF view, Quick details, Rates
+   ===================================================================== */
+
+/* Split layout: PDF viewer + details */
+.wrap{
+  max-width:1100px; margin: 0 auto 2rem;
+  display:grid; grid-template-columns:1.2fr .8fr; gap:1rem;
+}
+@media (max-width:1000px){ .wrap{ grid-template-columns:1fr; } }
+
+/* Viewer / Details shells */
+.viewer-card, .details-card{
+  background:#fff; border:1px solid var(--line);
+  border-radius:14px; overflow:hidden; box-shadow: var(--shadow);
+}
+.viewer-head, .details-head{
+  display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;
+  padding:.9rem 1rem; background: var(--surface-2); border-bottom:1px solid #edf0f4;
+}
+.viewer-title, .details-title{ font-weight:800; color:#0e1e5b; }
+.viewer-actions{ margin-left:auto; display:flex; gap:.5rem; flex-wrap:wrap; }
+
+/* Buttons */
+.btn{
+  border:1px solid #dfe3eb; background:#fff; color:#17233b;
+  border-radius:.55rem; padding:.5rem .75rem;
+  display:inline-flex; gap:.45rem; align-items:center;
+  cursor:pointer; font-size:.95rem;
+}
+.btn:hover{ border-color: var(--eskom-blue-50); }
+.btn.primary{ background: var(--primary); border-color: var(--primary); color:#fff; }
+.btn.primary:hover{ background: var(--primary-hover); }
+
+/* PDF area (iframe first; embed fallback) */
+.pdf-wrap{ width:100%; height: min(78vh, 900px); background:#f5f7fa; }
+.pdf-iframe, .pdf-object{ width:100%; height:100%; border:0; }
+
+/* Details body */
+.details-body{ padding: .9rem 1rem; }
+
+/* Quick cards grid (Description, Supply Sizes, Rates) */
+#detailCards{
+  display:grid; grid-template-columns:1fr; gap:.6rem;
+}
+.mini-card{
+  border:1px solid var(--line); background:#fff; border-radius:.6rem;
+  padding:.75rem .85rem; cursor:pointer;
+  display:flex; gap:.6rem; align-items:center; text-align:left;
+  transition: background .15s ease, border-color .15s ease;
+}
+.mini-card:hover{ background: #f9fbff; border-color: var(--eskom-blue-50); }
+.mini-card i{ color: var(--primary); opacity:.9; }
+
+/* Expandable panel */
+.panel{
+  margin-top:.8rem; border:1px solid var(--line); border-radius:.6rem;
+  background:#fcfdff; display:none;
+}
+.panel.show{ display:block; }
+.panel .panel-head{
+  padding:.75rem .85rem; font-weight:700; border-bottom:1px solid var(--line);
+  background:#f8fbff;
+}
+.panel .panel-body{ padding:.85rem .95rem; }
+
+/* Professional copy */
+.prose p{ margin:0 0 .75rem 0; line-height:1.65; }
+.prose ul{ margin:.4rem 0 .85rem 1.1rem; line-height:1.6; }
+.prose li{ margin:.2rem 0; }
+.tight-list{ margin:.25rem 0 .5rem 1.1rem; }
+.tight-list li{ margin:.15rem 0; }
 
 /* Rates controls + table */
-.rates-controls { 
-  display: grid; 
-  grid-template-columns: 1fr 1fr 1fr; 
-  gap: .75rem; 
-  margin-bottom: .75rem; 
+.rates-controls{
+  display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.75rem; margin-bottom:.8rem;
 }
-@media (max-width: 680px){
-  .rates-controls { grid-template-columns: 1fr; }
+@media (max-width:680px){ .rates-controls{ grid-template-columns:1fr; } }
+.rates-row{ display:flex; flex-direction:column; gap:.35rem; text-align:left; }
+.rates-row label{ font-weight:600; color:#223; }
+.rates-row select{
+  padding:.55rem .6rem; border:1px solid #e3e3e3; border-radius:.5rem; background:#fff;
 }
-.rates-row { display:flex; flex-direction: column; gap: .35rem; text-align: left; }
-.rates-row label { font-weight: 600; color: #223; }
-.rates-row select { padding: .55rem .6rem; border: 1px solid #e3e3e3; border-radius: .5rem; background: #fff; }
-.rates-table-wrap { overflow-x: auto; }
+.rates-table-wrap{ overflow-x:auto; }
 
-/* VAT toggle switch */
-.switch{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle}
-.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cfd7e6;transition:.2s;border-radius:24px}
-.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%}
-.switch input:checked + .slider{background:#0a7}
-.switch input:checked + .slider:before{transform:translateX(20px)}
+/* VAT toggle */
+.switch{ position:relative; display:inline-block; width:44px; height:24px; vertical-align:middle; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{
+  position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+  background:#cfd7e6; transition:.2s; border-radius:24px;
+}
+.slider:before{ position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px;
+  background:#fff; transition:.2s; border-radius:50%;
+}
+.switch input:checked + .slider{ background: var(--accent-ok); }
+.switch input:checked + .slider:before{ transform:translateX(20px); }
 .vat-row{ display:flex; align-items:center; gap:.6rem; }
-.vat-label{ font-weight:600; color:#0e1e5b; }
+.vat-label{ font-weight:700; color:#0e1e5b; }
 
+/* =====================================================================
+   Compare Tariffs (shared components used in compare-tariffs.html)
+   ===================================================================== */
+.option-tile{
+  border:1px solid #e5e5e5; border-radius:.75rem; padding:.55rem .8rem;
+  display:flex; gap:.55rem; align-items:center; background:#fff;
+}
+.option-tile input{ transform: scale(1.1); }
+.pill{
+  font-size:.75rem; color:#334; background:#f3f6fb;
+  border:1px solid #e6ebf7; border-radius:999px; padding:.1rem .55rem; margin-left:auto;
+}
+.btn-ghost{
+  border:1px solid #ddd; background:#fafafa; border-radius:.5rem; padding:.45rem .7rem; cursor:pointer;
+}
+.btn-ghost:hover{ background:#f2f2f2; }
 
+/* =====================================================================
+   Utilities
+   ===================================================================== */
+.muted{ color: var(--ink-muted); font-size:.92rem; }
+.text-left{ text-align:left; }
+.text-right{ text-align:right; }
+.sr-only{
+  position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
 
+/* =====================================================================
+   Brand-driven theming helpers (optional)
+   ===================================================================== */
+.bg-primary-soft{ background: var(--primary-soft); }
+.border-primary{ border-color: var(--primary) !important; }
+.text-primary{ color: var(--primary) !important; }
+.text-green{ color: var(--green-100) !important; }
+.text-orange{ color: var(--orange-100) !important; }
+.text-teal{ color: var(--teal-100) !important; }
+.bg-green-25{ background: var(--green-25) !important; }
+.bg-orange-25{ background: var(--orange-25) !important; }
+.bg-teal-25{ background: var(--teal-25) !important; }
