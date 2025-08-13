@@ -421,7 +421,7 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
     if (barW > labW + insidePadding * 2) {
       svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: txtOnBar }));
     } else {
-      svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: "black" }));
+      svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: "white" }));
     }
     // Value
     if (barW > valW + insidePadding * 2) {
@@ -612,6 +612,7 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
 
 
 
