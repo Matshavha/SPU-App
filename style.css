@@ -183,7 +183,7 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 /* ---------------------------- Back Button --------------------------- */
 .back-button{
   position:absolute; top: 18px; left: 10px;
-  background: rgba(0,0,0,.25);
+  /*background: rgba(0,0,0,.25); */
   backdrop-filter: blur(2px);
   color:#fff;
   font-weight:700; font-size:1rem;
@@ -195,7 +195,7 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 .back-button:hover{ background: rgba(0,0,0,.35); }
 .back-button i{ font-size:1.2rem; }
 @media (max-width:600px){
-  .back-button{ top:6px; left:6px; }
+  .back-button{ top:0px; left:0px; }
   .back-button span{ display:none; }
 }
 
@@ -339,3 +339,4 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 .bg-green-25{ background: var(--green-25) !important; }
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
+
