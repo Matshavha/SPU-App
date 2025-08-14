@@ -294,7 +294,7 @@ function renderOptions() {
     return;
   }
   /* ✅ Do NOT switch to the “Tick up to five tariffs to compare.” sentence */
-  dom.catHint.textContent = "Choose categories to see tariffs below.";
+  dom.catHint.textContent = "";
 
   const items = tariffData.filter(t => cats.has(catOf(t.Tariff)));
 
@@ -654,6 +654,7 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
 
 
 
