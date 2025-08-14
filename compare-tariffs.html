@@ -32,7 +32,10 @@
         <label class="option-tile"><input type="checkbox" class="cat" value="Landrate"> <span>Landrate</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Homelight"   checked> <span>Homelight</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Landlight"> <span>Landlight</span></label>
+        <!-- ✅ Added Municrate category -->
+        <label class="option-tile"><input type="checkbox" class="cat" value="Municrate"> <span>Municrate</span></label>
       </div>
+      <!-- ✅ Keep helper text, but the JS no longer switches it to “Tick up to five…”. -->
       <p id="catHint" class="muted" style="margin:.5rem 0 0;">Tick categories to see available tariffs below.</p>
     </section>
 
@@ -99,7 +102,7 @@
             <tr>
               <th>Tariff</th>
               <th>Total energy (c/kWh)</th>
-              <th>Total fixed (R/Pod/Day)</th>
+              <th>Total fixed (R/POD/day)</th>
             </tr>
           </thead>
           <tbody><!-- injected --></tbody>
@@ -121,4 +124,3 @@
   <script defer src="compareTariffs.js"></script>
 </body>
 </html>
-
