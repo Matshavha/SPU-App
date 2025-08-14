@@ -178,7 +178,36 @@ table{ width:100%; border-collapse:collapse; }
 .tariff-card:hover{ transform: scale(1.02); }
 
 /* ----------------------------- Footer ------------------------------- */
-footer{ background: var(--primary); height: 60px; width:100%; }
+/* Global site footer */
+footer.site-footer{
+  background: var(--primary);
+  color: #fff;
+  margin-top: auto;                 /* pushes footer to bottom with body{display:flex} */
+}
+.site-footer .inner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.site-footer a{
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.site-footer small{ opacity: .9; }
+
+/* (optional) footer links group */
+.footer-nav{
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-weight: 600;
+}
 
 /* ---------------------------- Back Button --------------------------- */
 .back-button{
@@ -339,6 +368,7 @@ footer{ background: var(--primary); height: 60px; width:100%; }
 .bg-green-25{ background: var(--green-25) !important; }
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
+
 
 
 
