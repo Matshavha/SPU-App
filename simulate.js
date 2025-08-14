@@ -141,6 +141,42 @@ const tariffData = [
   {
     "Tariff": "Landlight 60A",
     "Energy Charge [c/kWh]": 836
+  },
+  {
+    "Tariff": "Municrate 1",
+    "Energy Charge [c/kWh]": 229.79,
+    "Ancillary Service Charge [c/kWh]": 0.41,
+    "Network Demand Charge [c/kWh]": 43.60,
+    "Network Capacity Charge [R/Pod/Day]": 34.06,
+    "Service and Administration Charge [R/Pod/Day]": 18.81,
+    "Generation Capacity Charge [R/Pod/Day]": 2.17
+  },
+  {
+    "Tariff": "Municrate 2",
+    "Energy Charge [c/kWh]": 229.79,
+    "Ancillary Service Charge [c/kWh]": 0.41,
+    "Network Demand Charge [c/kWh]": 43.60,
+    "Network Capacity Charge [R/Pod/Day]": 69.01,
+    "Service and Administration Charge [R/Pod/Day]": 18.81,
+    "Generation Capacity Charge [R/Pod/Day]": 4.01
+  },
+  {
+    "Tariff": "Municrate 3",
+    "Energy Charge [c/kWh]": 229.79,
+    "Ancillary Service Charge [c/kWh]": 0.41,
+    "Network Demand Charge [c/kWh]": 43.60,
+    "Network Capacity Charge [R/Pod/Day]": 138.21,
+    "Service and Administration Charge [R/Pod/Day]": 18.81,
+    "Generation Capacity Charge [R/Pod/Day]": 8.46
+  },
+  {
+    "Tariff": "Municrate 4",
+    "Energy Charge [c/kWh]": 349.28,
+    "Ancillary Service Charge [c/kWh]": 0.41,
+    "Network Demand Charge [c/kWh]": 43.60,
+    "Network Capacity Charge [R/Pod/Day]": null,
+    "Service and Administration Charge [R/Pod/Day]": null,
+    "Generation Capacity Charge [R/Pod/Day]": null
   }
 ];
 
@@ -247,4 +283,5 @@ document.addEventListener('DOMContentLoaded', () => {
 `;
   });
 });
+
 
