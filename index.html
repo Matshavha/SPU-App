@@ -2,55 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eskom SPU Tariffs App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eskom SPU App</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    /* Vertical stack just for the home page */
-    .card-vertical { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 1rem; 
-      max-width: 900px; 
-      margin: 0 auto; 
-    }
-    .card-vertical .card { display: block; }
-  </style>
+  <!-- Font Awesome (icons) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
 </head>
 <body>
+  <a class="sr-only" href="#main">Skip to content</a>
+
   <header>
-    <img src="assets/header_banner.png" alt="Eskom Banner" class="header-banner" />
+    <img src="assets/header_banner.png" alt="Eskom banner" class="header-banner" />
   </header>
 
-  <main class="content">
-    <h1>Welcome to the Eskom SPU Tariff App</h1>
+  <main id="main" class="content">
+    <h1>Welcome</h1>
 
-    <!-- Vertical cards -->
+    <!-- Home cards -->
     <div class="card-vertical">
-      <a href="spu-tariff.html" class="card">
-        <i class="fas fa-book-open fa-2x"></i>
-        <h2>Understanding Your Tariff</h2>
-        <p>Explore SPU tariff components with VAT toggle and favourites.</p>
+      <a class="card card--home accent-teal" href="simulate.html">
+        <i class="fa-solid fa-calculator"></i>
+        <div>
+          <h2>Simulate My Bill</h2>
+          <p>Calculate a VAT-inclusive bill for a selected tariff, given your energy, PODs, and dates.</p>
+        </div>
       </a>
 
-      <a href="simulate.html" class="card">
-        <i class="fas fa-calculator fa-2x"></i>
-        <h2>Calculate My Bill</h2>
-        <p>Estimate your bill using SPU rates, usage, and billing dates.</p>
+      <a class="card card--home accent-orange" href="compare-tariffs.html">
+        <i class="fa-solid fa-chart-column"></i>
+        <div>
+          <h2>Compare Tariffs</h2>
+          <p>Pick up to five tariffs and compare totals, energy vs fixed split, and full breakdown pies.</p>
+        </div>
       </a>
+    </div>
 
-      <!-- Force navigation to compare-tariffs.html -->
-      <a href="compare-tariffs.html" class="card" onclick="window.location.href='compare-tariffs.html'; return false;">
-        <i class="fas fa-balance-scale fa-2x"></i>
-        <h2>Compare Tariffs</h2>
-        <p>Select up to five tariffs (across categories) and compare side-by-side.</p>
-      </a>
+    <!-- Education/notes (optional) -->
+    <div class="education" style="margin-top:1.25rem;">
+      <strong>Note:</strong> This tool is for informational purposes only and is not affiliated with Eskom.
     </div>
   </main>
 
-  <footer></footer>
+  <!-- Site-wide footer -->
+  <footer class="site-footer">
+    <div class="inner">
+      <small>
+        © 2025 Your Org. Eskom, Homelight, Homepower, Landrate, and Municrate are trademarks of Eskom Holdings SOC Ltd.
+        This tool is not affiliated with or endorsed by Eskom.
+        Icons by <a href="https://fontawesome.com/" target="_blank" rel="noopener">Font Awesome</a>
+        (CC BY 4.0 for icons, SIL OFL 1.1 for fonts, MIT for code).
+      </small>
+
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="simulate.html"><i class="fa-solid fa-calculator"></i> Simulate</a>
+        <a href="compare-tariffs.html"><i class="fa-solid fa-chart-column"></i> Compare</a>
+        <a href="privacy.html"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
+        <a href="terms.html"><i class="fa-solid fa-file-lines"></i> Terms &amp; Conditions</a>
+      </nav>
+    </div>
+  </footer>
 </body>
 </html>
-
-
