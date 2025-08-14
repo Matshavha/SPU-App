@@ -28,6 +28,7 @@ const THEME = {
     cssVar('--green-100', 'rgb(13,176,43)'),
   ],
 };
+const VAT_COLOR = cssVar('--grey-500', '#9aa3b2');
 
 /* Decide text colour for contrast on a given rgb(...) color */
 function getTextColorForBg(rgb) {
@@ -138,10 +139,13 @@ const CANON = [
   { label: 'Generation capacity',      match: ['Generation Capacity Charge'] },
   { label: 'Service & admin',          match: ['Service and Administration Charge'] },
 ];
+
 const CANON_ORDER = CANON.map(c => c.label).concat(['VAT']);
 const COLOR_MAP = Object.fromEntries(
   CANON_ORDER.map((lbl, i) => [lbl, THEME.pieColors[i % THEME.pieColors.length]])
 );
+// Ensure VAT is grey (not blue)
+COLOR_MAP['VAT'] = VAT_COLOR;
 
 /* Strip units then map to canonical label */
 function canonicalizeLabel(rawKeyOrLabel){
@@ -665,6 +669,7 @@ function renderBreakdown(){
   const legendLabels = CANON_ORDER.filter(lbl => seen.has(lbl));
   renderGlobalLegend(dom.piesLegend, legendLabels, COLOR_MAP);
 }
+
 
 
 
