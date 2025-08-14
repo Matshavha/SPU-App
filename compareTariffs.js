@@ -65,13 +65,24 @@ const tariffData = [
   { "Tariff": "LandrateDx*", "Service and Administration Charge [R/Pod/Day]": 87 },
 
   { "Tariff": "Landlight 20A", "Energy Charge [c/kWh]": 603.54 },
-  { "Tariff": "Landlight 60A", "Energy Charge [c/kWh]": 836 }
+  { "Tariff": "Landlight 60A", "Energy Charge [c/kWh]": 836 },
+
+  /* ✅ Added Municrate 1–4 (VAT-exclusive values; units per spec R/POD/day) */
+  { "Tariff": "Municrate 1", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 34.06, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 2.17 },
+  { "Tariff": "Municrate 2", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 69.01, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 4.01 },
+  { "Tariff": "Municrate 3", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 138.21, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 8.46 },
+  { "Tariff": "Municrate 4", "Energy Charge [c/kWh]": 349.28, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": null, "Service and Administration Charge [R/POD/day]": null, "Generation Capacity Charge [R/POD/day]": null }
 ];
 
 /* ---------- helpers ---------- */
 const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
-const isFixedKey  = (k) => keyUnit(k) === "R/Pod/Day";
+/* ✅ Accept both historical [R/Pod/Day] and new [R/POD/day] spellings */
+function isFixedKey(k){
+  const u = keyUnit(k).toLowerCase();
+  return u === "r/pod/day";
+}
+/* ✅ Normalize money label text to R/POD/day */
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
 const catOf = (tName) => tName.split(" ")[0];
 
@@ -91,28 +102,40 @@ function calcBill(t, kwh, days, vatIncl) {
 }
 function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
-function perDay(v){ return `R ${v.toFixed(2)} /Pod/Day`; }
+/* ✅ Output unit text as R/POD/day everywhere */
+function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
 
-/* Detailed components (labels align with your keys) */
+/* Detailed components (support both “Network” and historic “Netword” spellings) */
 const ENERGY_COMPONENT_KEYS = [
   "Energy Charge [c/kWh]",
   "Ancillary Service Charge [c/kWh]",
+  "Network Demand Charge [c/kWh]",
   "Netword Demand Charge [c/kWh]",
   "Electrification and Rural Network Subsidy Charge [c/kWh]"
 ];
 const FIXED_COMPONENT_KEYS = [
   "Network Capacity Charge [R/Pod/Day]",
+  "Network Capacity Charge [R/POD/day]",
   "Generation Capacity Charge [R/Pod/Day]",
-  "Service and Administration Charge [R/Pod/Day]"
+  "Generation Capacity Charge [R/POD/day]",
+  "Service and Administration Charge [R/Pod/Day]",
+  "Service and Administration Charge [R/POD/day]"
 ];
+
+/* Strip either fixed-unit variant from labels */
+function stripUnits(lbl){
+  return lbl.replace(' [c/kWh]','')
+            .replace(' [R/Pod/Day]','')
+            .replace(' [R/POD/day]','');
+}
 
 function componentBreakdownRand(t, kwh, days) {
   const items = [];
   for (const k of ENERGY_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: k.replace(' [c/kWh]',''), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
+    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
   }
   for (const k of FIXED_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: k.replace(' [R/Pod/Day]',''), amountR: (t[k]||0) * days, kind:'fixed' });
+    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0) * days, kind:'fixed' });
   }
   return items;
 }
@@ -270,7 +293,8 @@ function renderOptions() {
     dom.catHint.textContent = "Tick at least one category to load tariffs.";
     return;
   }
-  dom.catHint.textContent = "Tick up to five tariffs to compare.";
+  /* ✅ Do NOT switch to the “Tick up to five tariffs to compare.” sentence */
+  dom.catHint.textContent = "Choose categories to see tariffs below.";
 
   const items = tariffData.filter(t => cats.has(catOf(t.Tariff)));
 
@@ -470,13 +494,21 @@ function drawDonut(container, title, items) {
   const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
   let angle = -Math.PI/2;
 
-  const svg = svgEl("svg", { width: w, height: h, style: 'display:block;margin:auto;' });
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.style.display = 'block';
+  svg.style.margin = 'auto';
 
   items.forEach(it => {
     if (!it.value) return;
     const frac = it.value / sum;
     const end = angle + frac * Math.PI * 2;
     const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
+    /* ✅ Native tooltip on hover */
+    const tip = svgEl("title", {});
+    tip.textContent = `${it.label}: ${money(it.value)}`;
+    path.appendChild(tip);
     svg.appendChild(path);
     angle = end;
   });
@@ -556,6 +588,21 @@ function renderBreakdown(){
     return colorMap[lbl];
   };
 
+  /* ✅ Friendly lookup aliases so columns populate instead of “—” */
+  const aliases = {
+    "Active energy": ["Energy Charge"],
+    "Ancillary service": ["Ancillary Service Charge"],
+    "Network demand": ["Network Demand Charge","Netword Demand Charge"],
+    "Electrification subsidy": ["Electrification and Rural Network Subsidy Charge"],
+    "Network capacity": ["Network Capacity Charge"],
+    "Generation capacity": ["Generation Capacity Charge"],
+    "Service": ["Service and Administration Charge"]
+  };
+  const amountFor = (comps, aliasList) => {
+    const hit = comps.find(c => aliasList.some(a => c.label.toLowerCase().startsWith(a.toLowerCase())));
+    return hit ? money(hit.amountR) : '—';
+  };
+
   selectedTariffs.forEach((t) => {
     const comps = componentBreakdownRand(t, state.kwh, state.days);
     const energyTotal = comps.filter(c => c.kind==='energy').reduce((a,c)=>a+c.amountR,0);
@@ -564,22 +611,17 @@ function renderBreakdown(){
     const vat = state.vatInclusive ? sub_excl * VAT_RATE : 0;
     const total = state.vatInclusive ? sub_excl + vat : sub_excl;
 
-    const findAmt = (prefix) => {
-      const f = comps.find(c => c.label.toLowerCase().startsWith(prefix.toLowerCase()));
-      return f ? money(f.amountR) : '—';
-    };
-
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${t.Tariff}</td>
-      <td>${findAmt('Active energy')}</td>
-      <td>${findAmt('Ancillary')}</td>
-      <td>${findAmt('Network demand')}</td>
-      <td>${findAmt('Electrification')}</td>
+      <td>${amountFor(comps, aliases["Active energy"])}</td>
+      <td>${amountFor(comps, aliases["Ancillary service"])}</td>
+      <td>${amountFor(comps, aliases["Network demand"])}</td>
+      <td>${amountFor(comps, aliases["Electrification subsidy"])}</td>
       <td><em>${money(energyTotal)}</em></td>
-      <td>${findAmt('Network capacity')}</td>
-      <td>${findAmt('Generation capacity')}</td>
-      <td>${findAmt('Service')}</td>
+      <td>${amountFor(comps, aliases["Network capacity"])}</td>
+      <td>${amountFor(comps, aliases["Generation capacity"])}</td>
+      <td>${amountFor(comps, aliases["Service"])}</td>
       <td><em>${money(fixedTotal)}</em></td>
       <td>${state.vatInclusive ? money(vat) : '—'}</td>
       <td><strong>${money(total)}</strong></td>
@@ -591,13 +633,13 @@ function renderBreakdown(){
     const items = [];
     ENERGY_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = k.replace(' [c/kWh]','');
+        const lbl = stripUnits(k);
         items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: assignColor(lbl) });
       }
     });
     FIXED_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = k.replace(' [R/Pod/Day]','');
+        const lbl = stripUnits(k);
         items.push({ label: lbl, value: (t[k]||0)*state.days, color: assignColor(lbl) });
       }
     });
@@ -612,12 +654,3 @@ function renderBreakdown(){
   // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
-
-
-
-
-
-
-
-
-
