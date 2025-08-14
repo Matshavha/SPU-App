@@ -1,5 +1,6 @@
 // compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
 // Single legend for all breakdown pies + safe labels in all charts
+// ✅ Updated: canonical component labels + fixed color map for consistent legends across all pies
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
@@ -82,7 +83,6 @@ function isFixedKey(k){
   const u = keyUnit(k).toLowerCase();
   return u === "r/pod/day";
 }
-/* ✅ Normalize money label text to R/POD/day */
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
 const catOf = (tName) => tName.split(" ")[0];
 
@@ -102,7 +102,6 @@ function calcBill(t, kwh, days, vatIncl) {
 }
 function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
-/* ✅ Output unit text as R/POD/day everywhere */
 function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
 
 /* Detailed components (support both “Network” and historic “Netword” spellings) */
@@ -129,13 +128,38 @@ function stripUnits(lbl){
             .replace(' [R/POD/day]','');
 }
 
+/* ---------- Canonical component labels & fixed colors (legend consistency) ---------- */
+const CANON = [
+  { label: 'Active energy',            match: ['Energy Charge'] },
+  { label: 'Ancillary service',        match: ['Ancillary Service Charge'] },
+  { label: 'Network demand',           match: ['Network Demand Charge', 'Netword Demand Charge'] }, // unify spellings
+  { label: 'Electrification subsidy',  match: ['Electrification and Rural Network Subsidy Charge'] },
+  { label: 'Network capacity',         match: ['Network Capacity Charge'] },
+  { label: 'Generation capacity',      match: ['Generation Capacity Charge'] },
+  { label: 'Service & admin',          match: ['Service and Administration Charge'] },
+];
+const CANON_ORDER = CANON.map(c => c.label).concat(['VAT']);
+const COLOR_MAP = Object.fromEntries(
+  CANON_ORDER.map((lbl, i) => [lbl, THEME.pieColors[i % THEME.pieColors.length]])
+);
+
+/* Strip units then map to canonical label */
+function canonicalizeLabel(rawKeyOrLabel){
+  const base = String(rawKeyOrLabel).replace(/\s*\[.*?\]\s*/,''); // remove [units]
+  for (const c of CANON) {
+    if (c.match.some(m => base.toLowerCase().startsWith(m.toLowerCase()))) return c.label;
+  }
+  return stripUnits(base); // fallback
+}
+
+/* Build component list in Rands using canonical labels */
 function componentBreakdownRand(t, kwh, days) {
   const items = [];
   for (const k of ENERGY_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
+    if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
   }
   for (const k of FIXED_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0) * days, kind:'fixed' });
+    if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0) * days, kind:'fixed' });
   }
   return items;
 }
@@ -293,7 +317,6 @@ function renderOptions() {
     dom.catHint.textContent = "Tick at least one category to load tariffs.";
     return;
   }
-  /* ✅ Do NOT switch to the “Tick up to five tariffs to compare.” sentence */
   dom.catHint.textContent = "";
 
   const items = tariffData.filter(t => cats.has(catOf(t.Tariff)));
@@ -505,7 +528,6 @@ function drawDonut(container, title, items) {
     const frac = it.value / sum;
     const end = angle + frac * Math.PI * 2;
     const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
-    /* ✅ Native tooltip on hover */
     const tip = svgEl("title", {});
     tip.textContent = `${it.label}: ${money(it.value)}`;
     path.appendChild(tip);
@@ -577,31 +599,14 @@ function renderBreakdown(){
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  // global legend bookkeeping
-  const colorMap = {};
-  const labelOrder = [];
-  const assignColor = (lbl) => {
-    if (!colorMap[lbl]) {
-      colorMap[lbl] = THEME.pieColors[labelOrder.length % THEME.pieColors.length];
-      labelOrder.push(lbl);
-    }
-    return colorMap[lbl];
-  };
+  // Track which canonical labels actually appear (for a concise legend)
+  const seen = new Set();
 
-  /* ✅ Friendly lookup aliases so columns populate instead of “—” */
-  const aliases = {
-    "Active energy": ["Energy Charge"],
-    "Ancillary service": ["Ancillary Service Charge"],
-    "Network demand": ["Network Demand Charge","Netword Demand Charge"],
-    "Electrification subsidy": ["Electrification and Rural Network Subsidy Charge"],
-    "Network capacity": ["Network Capacity Charge"],
-    "Generation capacity": ["Generation Capacity Charge"],
-    "Service": ["Service and Administration Charge"]
-  };
-  const amountFor = (comps, aliasList) => {
-    const hit = comps.find(c => aliasList.some(a => c.label.toLowerCase().startsWith(a.toLowerCase())));
+  // Helper: get amount by canonical label from comps[]
+  const amountByCanon = (comps, canonLabel) => {
+    const hit = comps.find(c => c.label === canonLabel);
     return hit ? money(hit.amountR) : '—';
-  };
+    };
 
   selectedTariffs.forEach((t) => {
     const comps = componentBreakdownRand(t, state.kwh, state.days);
@@ -611,49 +616,57 @@ function renderBreakdown(){
     const vat = state.vatInclusive ? sub_excl * VAT_RATE : 0;
     const total = state.vatInclusive ? sub_excl + vat : sub_excl;
 
+    // Table row
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${t.Tariff}</td>
-      <td>${amountFor(comps, aliases["Active energy"])}</td>
-      <td>${amountFor(comps, aliases["Ancillary service"])}</td>
-      <td>${amountFor(comps, aliases["Network demand"])}</td>
-      <td>${amountFor(comps, aliases["Electrification subsidy"])}</td>
+      <td>${amountByCanon(comps, 'Active energy')}</td>
+      <td>${amountByCanon(comps, 'Ancillary service')}</td>
+      <td>${amountByCanon(comps, 'Network demand')}</td>
+      <td>${amountByCanon(comps, 'Electrification subsidy')}</td>
       <td><em>${money(energyTotal)}</em></td>
-      <td>${amountFor(comps, aliases["Network capacity"])}</td>
-      <td>${amountFor(comps, aliases["Generation capacity"])}</td>
-      <td>${amountFor(comps, aliases["Service"])}</td>
+      <td>${amountByCanon(comps, 'Network capacity')}</td>
+      <td>${amountByCanon(comps, 'Generation capacity')}</td>
+      <td>${amountByCanon(comps, 'Service & admin')}</td>
       <td><em>${money(fixedTotal)}</em></td>
       <td>${state.vatInclusive ? money(vat) : '—'}</td>
       <td><strong>${money(total)}</strong></td>
     `;
     dom.breakdownTableBody.appendChild(tr);
 
-    // Per-tariff donut
+    // Per-tariff donut (canonical labels + fixed colors)
     const pieBox = document.createElement('div');
     const items = [];
+
     ENERGY_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = stripUnits(k);
-        items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: assignColor(lbl) });
+        const lbl = canonicalizeLabel(k);
+        items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: COLOR_MAP[lbl] });
+        seen.add(lbl);
       }
     });
     FIXED_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = stripUnits(k);
-        items.push({ label: lbl, value: (t[k]||0)*state.days, color: assignColor(lbl) });
+        const lbl = canonicalizeLabel(k);
+        items.push({ label: lbl, value: (t[k]||0)*state.days, color: COLOR_MAP[lbl] });
+        seen.add(lbl);
       }
     });
     if (state.vatInclusive) {
-      items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: assignColor('VAT') });
+      items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: COLOR_MAP['VAT'] });
+      seen.add('VAT');
     }
 
     drawDonut(pieBox, t.Tariff, items);
     dom.piesRow.appendChild(pieBox);
   });
 
-  // Render ONE legend for all pies
-  renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
+  // Render ONE legend with fixed order/colors, showing only labels that appear
+  const legendLabels = CANON_ORDER.filter(lbl => seen.has(lbl));
+  renderGlobalLegend(dom.piesLegend, legendLabels, COLOR_MAP);
 }
+
+
 
 
 
