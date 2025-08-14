@@ -514,7 +514,7 @@ function showRatesPanel(tariffKey){
       if (u === "c/kWh") {
         display = `${val.toFixed(2)} c/kWh`;
       } else if (u === "R/Pod/Day") {
-        display = `R ${val.toFixed(2)} /POD/Day`;
+        display = `R ${val.toFixed(2)} /POD/day`;
       } else {
         display = `R ${val.toFixed(2)}`;
       }
@@ -549,6 +549,7 @@ function showRatesPanel(tariffKey){
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
+
 
 
 
