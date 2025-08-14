@@ -4,13 +4,13 @@
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
 
-/* ---------- Theme helpers (pull from style.css, with fallbacks) ---------- */
+/* ---------- Theme helpers ---------- */
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
 const THEME = {
-  primary:   cssVar('--primary', '#003896'),      // Eskom blue
+  primary:   cssVar('--primary', '#003896'),
   surface2:  cssVar('--surface-2', '#eef2f7'),
   surface3:  cssVar('--surface-3', '#e6ecf5'),
   ink:       cssVar('--ink', '#1f2430'),
@@ -28,7 +28,7 @@ const THEME = {
   ],
 };
 
-/* Decide text colour for contrast on a given rgb(...) color */
+/* Decide text colour for contrast on rgb(...) */
 function getTextColorForBg(rgb) {
   const nums = (rgb.match(/\d+/g) || []).map(Number);
   if (nums.length < 3) return '#000';
@@ -36,13 +36,11 @@ function getTextColorForBg(rgb) {
   const luminance = (0.299*r + 0.587*g + 0.114*b) / 255;
   return luminance > 0.5 ? '#000' : '#fff';
 }
-
-/* Rough text width estimator (for SVG placement decisions) */
 function estimateTextWidth(text, fontSize = 12) {
   return Math.max(6, text.length * fontSize * 0.6);
 }
 
-/* ---------- Tariff data (keep in sync with spuTariffsmart.js) ---------- */
+/* ---------- Tariff data (unchanged except Municrate already added) ---------- */
 const tariffData = [
   { "Tariff": "Businessrate 1", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 20.34, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 1.98 },
   { "Tariff": "Businessrate 2", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 30.21, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 2.95 },
@@ -67,7 +65,6 @@ const tariffData = [
   { "Tariff": "Landlight 20A", "Energy Charge [c/kWh]": 603.54 },
   { "Tariff": "Landlight 60A", "Energy Charge [c/kWh]": 836 },
 
-  /* ✅ Added Municrate 1–4 (VAT-exclusive values; units per spec R/POD/day) */
   { "Tariff": "Municrate 1", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 34.06, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 2.17 },
   { "Tariff": "Municrate 2", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 69.01, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 4.01 },
   { "Tariff": "Municrate 3", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 138.21, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 8.46 },
@@ -77,12 +74,9 @@ const tariffData = [
 /* ---------- helpers ---------- */
 const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
-/* ✅ Accept both historical [R/Pod/Day] and new [R/POD/day] spellings */
 function isFixedKey(k){
-  const u = keyUnit(k).toLowerCase();
-  return u === "r/pod/day";
+  return keyUnit(k).toLowerCase() === "r/pod/day";
 }
-/* ✅ Normalize money label text to R/POD/day */
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
 const catOf = (tName) => tName.split(" ")[0];
 
@@ -102,10 +96,9 @@ function calcBill(t, kwh, days, vatIncl) {
 }
 function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
-/* ✅ Output unit text as R/POD/day everywhere */
 function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
 
-/* Detailed components (support both “Network” and historic “Netword” spellings) */
+/* Key lists (support both “Network/Netword” + both fixed-unit spellings) */
 const ENERGY_COMPONENT_KEYS = [
   "Energy Charge [c/kWh]",
   "Ancillary Service Charge [c/kWh]",
@@ -122,20 +115,33 @@ const FIXED_COMPONENT_KEYS = [
   "Service and Administration Charge [R/POD/day]"
 ];
 
-/* Strip either fixed-unit variant from labels */
 function stripUnits(lbl){
   return lbl.replace(' [c/kWh]','')
             .replace(' [R/Pod/Day]','')
             .replace(' [R/POD/day]','');
 }
 
+/* ✅ Canonicalize labels so legends are identical across ALL pies */
+function canonicalLabel(lbl){
+  const L = lbl.toLowerCase();
+  if (L.startsWith('energy charge')) return 'Active energy';
+  if (L.startsWith('ancillary service charge')) return 'Ancillary service';
+  if (L.startsWith('netword demand charge') || L.startsWith('network demand charge')) return 'Network demand';
+  if (L.startsWith('electrification and rural network subsidy charge')) return 'Electrification subsidy';
+  if (L.startsWith('network capacity charge')) return 'Network capacity';
+  if (L.startsWith('generation capacity charge')) return 'Generation capacity';
+  if (L.startsWith('service and administration charge')) return 'Service & admin';
+  if (L === 'vat') return 'VAT';
+  return lbl;
+}
+
 function componentBreakdownRand(t, kwh, days) {
   const items = [];
   for (const k of ENERGY_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
+    if (t[k] != null) items.push({ label: canonicalLabel(stripUnits(k)), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
   }
   for (const k of FIXED_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: stripUnits(k), amountR: (t[k]||0) * days, kind:'fixed' });
+    if (t[k] != null) items.push({ label: canonicalLabel(stripUnits(k)), amountR: (t[k]||0) * days, kind:'fixed' });
   }
   return items;
 }
@@ -156,8 +162,6 @@ function q(id){ return document.getElementById(id); }
 
 document.addEventListener("DOMContentLoaded", () => {
   dom.catGroup    = q("categoryGroup");
-  dom.catHint     = q("catHint");
-
   dom.options     = q("tariffOptions");
   dom.selCounter  = q("selCounter");
   dom.selWarning  = q("selWarning");
@@ -175,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   dom.compTable   = q("componentTable").querySelector("tbody");
   dom.billTotalHdr= q("billTotalHdr");
 
-  injectBreakdownUI(); // button + hidden card
+  injectBreakdownUI();
 
   // Categories
   dom.catGroup.querySelectorAll("input.cat").forEach(cb => {
@@ -289,12 +293,7 @@ function injectBreakdownUI(){
 function renderOptions() {
   dom.options.innerHTML = "";
   const cats = state.categories;
-  if (!cats.size) {
-    dom.catHint.textContent = "Tick at least one category to load tariffs.";
-    return;
-  }
-  /* ✅ Do NOT switch to the “Tick up to five tariffs to compare.” sentence */
-  dom.catHint.textContent = "Choose categories to see tariffs below.";
+  if (!cats.size) return;
 
   const items = tariffData.filter(t => cats.has(catOf(t.Tariff)));
 
@@ -387,7 +386,7 @@ function renderBillTable(items) {
   });
 }
 
-/* ---------- lightweight SVG helpers ---------- */
+/* ---------- SVG helpers ---------- */
 function svgEl(tag, attrs) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
   Object.entries(attrs || {}).forEach(([k,v]) => el.setAttribute(k, v));
@@ -414,7 +413,7 @@ function polarToCartesian(cx, cy, r, angleRad){
   return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
 
-/* Horizontal bar chart with smart label placement */
+/* Horizontal bar chart */
 function drawBarChart(container, labels, values, { unit = "" } = {}) {
   container.innerHTML = "";
   const w = container.clientWidth || 680;
@@ -434,20 +433,18 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
     const barW = ((w - pad*2) * val) / max;
     const valueStr = unit === "R" ? `R ${val.toFixed(2)}` : val.toFixed(2);
 
-    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface2)); // track
-    svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, barColor));            // bar
+    svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface2));
+    svg.appendChild(rect(pad, y + rowH*0.2, barW, rowH*0.6, barColor));
 
     const labW = estimateTextWidth(lab, fontSize);
     const valW = estimateTextWidth(valueStr, fontSize);
     const insidePadding = 10;
 
-    // Name
     if (barW > labW + insidePadding * 2) {
       svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: txtOnBar }));
     } else {
       svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: "white" }));
     }
-    // Value
     if (barW > valW + insidePadding * 2) {
       svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: txtOnBar }));
     } else {
@@ -458,7 +455,7 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
   container.appendChild(svg);
 }
 
-/* 100% stacked split (energy vs fixed) — label always visible */
+/* Stacked % split */
 function drawStackedPctChart(container, labels, pairs) {
   container.innerHTML = "";
   const w = container.clientWidth || 680;
@@ -474,21 +471,18 @@ function drawStackedPctChart(container, labels, pairs) {
     const eW = (w - pad*2) * (e / 100);
     const fW = (w - pad*2) - eW;
 
-    // subtle track to improve readability
     svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface3));
     svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, THEME.energy));
     svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, THEME.fixed));
 
-    // Name inside the track at the very left → never clipped
     svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: THEME.ink }));
-    // Percentages on the right
     svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: THEME.ink }));
   });
 
   container.appendChild(svg);
 }
 
-/* Donut pie (no legend here; legend is global) */
+/* Donut pies with unified, canonical labels + tooltips */
 function drawDonut(container, title, items) {
   const w = 260, h = 260, cx = w/2, cy = h/2 - 6, r = 92, inner = 54;
   const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
@@ -505,23 +499,20 @@ function drawDonut(container, title, items) {
     const frac = it.value / sum;
     const end = angle + frac * Math.PI * 2;
     const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
-    /* ✅ Native tooltip on hover */
     const tip = svgEl("title", {});
-    tip.textContent = `${it.label}: ${money(it.value)}`;
+    tip.textContent = `${canonicalLabel(it.label)}: ${money(it.value)}`;
     path.appendChild(tip);
     svg.appendChild(path);
     angle = end;
   });
 
-  // Center total
   svg.appendChild(text(cx, cy, money(sum), { anchor: "middle", size: 12, color: THEME.ink }));
-  // Title
   svg.appendChild(text(cx, h-14, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
 
   container.appendChild(svg);
 }
 
-/* Build a single legend covering all pies */
+/* Global legend (now based on canonical labels) */
 function renderGlobalLegend(container, labelsOrdered, colorMap) {
   container.innerHTML = "";
   const legend = document.createElement('div');
@@ -530,6 +521,7 @@ function renderGlobalLegend(container, labelsOrdered, colorMap) {
   legend.style.gap = '.45rem .9rem';
 
   labelsOrdered.forEach(lbl => {
+    const canon = canonicalLabel(lbl);
     const row = document.createElement('div');
     row.style.display = 'flex';
     row.style.alignItems = 'center';
@@ -540,7 +532,7 @@ function renderGlobalLegend(container, labelsOrdered, colorMap) {
     const txt = document.createElement('span');
     txt.style.fontSize = '.95rem';
     txt.style.color = THEME.inkMuted;
-    txt.textContent = lbl;
+    txt.textContent = canon;
     row.appendChild(sw); row.appendChild(txt);
     legend.appendChild(row);
   });
@@ -567,7 +559,7 @@ function renderSplitChart(items) {
   drawStackedPctChart(dom.splitChart, labels, pairs);
 }
 
-/* ---------- Full breakdown card (hidden by default) ---------- */
+/* ---------- Full breakdown card ---------- */
 function renderBreakdown(){
   dom.breakdownTableBody.innerHTML = "";
   dom.piesRow.innerHTML = "";
@@ -577,18 +569,17 @@ function renderBreakdown(){
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  // global legend bookkeeping
   const colorMap = {};
   const labelOrder = [];
   const assignColor = (lbl) => {
-    if (!colorMap[lbl]) {
-      colorMap[lbl] = THEME.pieColors[labelOrder.length % THEME.pieColors.length];
-      labelOrder.push(lbl);
+    const canon = canonicalLabel(lbl);
+    if (!colorMap[canon]) {
+      colorMap[canon] = THEME.pieColors[labelOrder.length % THEME.pieColors.length];
+      labelOrder.push(canon);
     }
-    return colorMap[lbl];
+    return colorMap[canon];
   };
 
-  /* ✅ Friendly lookup aliases so columns populate instead of “—” */
   const aliases = {
     "Active energy": ["Energy Charge"],
     "Ancillary service": ["Ancillary Service Charge"],
@@ -601,7 +592,7 @@ function renderBreakdown(){
   const amountFor = (comps, aliasList) => {
     const hit = comps.find(c => aliasList.some(a => c.label.toLowerCase().startsWith(a.toLowerCase())));
     return hit ? money(hit.amountR) : '—';
-  };
+    };
 
   selectedTariffs.forEach((t) => {
     const comps = componentBreakdownRand(t, state.kwh, state.days);
@@ -628,29 +619,29 @@ function renderBreakdown(){
     `;
     dom.breakdownTableBody.appendChild(tr);
 
-    // Per-tariff donut
+    // Per-tariff donut with canonical labels
     const pieBox = document.createElement('div');
     const items = [];
     ENERGY_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = stripUnits(k);
+        const lbl = canonicalLabel(stripUnits(k));
         items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: assignColor(lbl) });
       }
     });
     FIXED_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
-        const lbl = stripUnits(k);
+        const lbl = canonicalLabel(stripUnits(k));
         items.push({ label: lbl, value: (t[k]||0)*state.days, color: assignColor(lbl) });
       }
     });
     if (state.vatInclusive) {
       items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: assignColor('VAT') });
     }
-
     drawDonut(pieBox, t.Tariff, items);
     dom.piesRow.appendChild(pieBox);
   });
 
-  // Render ONE legend for all pies
   renderGlobalLegend(dom.piesLegend, labelOrder, colorMap);
 }
+
+
