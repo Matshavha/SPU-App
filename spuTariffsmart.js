@@ -14,37 +14,37 @@ const RATE_DATA = {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 20.34,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 20.34,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 1.98
+        "Generation Capacity Charge [R/POD/day]": 1.98
       },
       "Businessrate 2": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 30.21,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 30.21,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 2.95
+        "Generation Capacity Charge [R/POD/day]": 2.95
       },
       "Businessrate 3": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 75.38,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 75.38,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 7.37
+        "Generation Capacity Charge [R/POD/day]": 7.37
       },
       "Businessrate 4": {
         "Energy Charge [c/kWh]": 350.09,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": null,
-        "Service and Administration Charge [R/Pod/Day]": null,
+        "Network Capacity Charge [R/POD/day]": null,
+        "Service and Administration Charge [R/POD/day]": null,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 0.00
+        "Generation Capacity Charge [R/POD/day]": 0.00
       }
     }
   },
@@ -54,33 +54,33 @@ const RATE_DATA = {
         "Energy Charge [c/kWh]": 268.78,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 26.37,
-        "Network Capacity Charge [R/Pod/Day]": 12.13,
-        "Service and Administration Charge [R/Pod/Day]": 3.27,
-        "Generation Capacity Charge [R/Pod/Day]": 0.72
+        "Network Capacity Charge [R/POD/day]": 12.13,
+        "Service and Administration Charge [R/POD/day]": 3.27,
+        "Generation Capacity Charge [R/POD/day]": 0.72
       },
       "Homepower 2": {
         "Energy Charge [c/kWh]": 268.78,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 26.37,
-        "Network Capacity Charge [R/Pod/Day]": 27.07,
-        "Service and Administration Charge [R/Pod/Day]": 3.27,
-        "Generation Capacity Charge [R/Pod/Day]": 1.27
+        "Network Capacity Charge [R/POD/day]": 27.07,
+        "Service and Administration Charge [R/POD/day]": 3.27,
+        "Generation Capacity Charge [R/POD/day]": 1.27
       },
       "Homepower 3": {
         "Energy Charge [c/kWh]": 268.78,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 26.37,
-        "Network Capacity Charge [R/Pod/Day]": 57.82,
-        "Service and Administration Charge [R/Pod/Day]": 3.27,
-        "Generation Capacity Charge [R/Pod/Day]": 3.1
+        "Network Capacity Charge [R/POD/day]": 57.82,
+        "Service and Administration Charge [R/POD/day]": 3.27,
+        "Generation Capacity Charge [R/POD/day]": 3.1
       },
       "Homepower 4": {
         "Energy Charge [c/kWh]": 268.78,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 26.37,
-        "Network Capacity Charge [R/Pod/Day]": 8.35,
-        "Service and Administration Charge [R/Pod/Day]": 3.27,
-        "Generation Capacity Charge [R/Pod/Day]": 0.47
+        "Network Capacity Charge [R/POD/day]": 8.35,
+        "Service and Administration Charge [R/POD/day]": 3.27,
+        "Generation Capacity Charge [R/POD/day]": 0.47
       }
     }
   },
@@ -97,35 +97,35 @@ const RATE_DATA = {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 61.66,
-        "Network Capacity Charge [R/Pod/Day]": 62.2,
-        "Service and Administration Charge [R/Pod/Day]": 24.5,
-        "Generation Capacity Charge [R/Pod/Day]": 2.71
+        "Network Capacity Charge [R/POD/day]": 62.2,
+        "Service and Administration Charge [R/POD/day]": 24.5,
+        "Generation Capacity Charge [R/POD/day]": 2.71
       },
       "Landrate 2": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 61.66,
-        "Network Capacity Charge [R/Pod/Day]": 96.99,
-        "Service and Administration Charge [R/Pod/Day]": 24.5,
-        "Generation Capacity Charge [R/Pod/Day]": 5.37
+        "Network Capacity Charge [R/POD/day]": 96.99,
+        "Service and Administration Charge [R/POD/day]": 24.5,
+        "Generation Capacity Charge [R/POD/day]": 5.37
       },
       "Landrate 3": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 61.66,
-        "Network Capacity Charge [R/Pod/Day]": 155.32,
-        "Service and Administration Charge [R/Pod/Day]": 24.5,
-        "Generation Capacity Charge [R/Pod/Day]": 10.5
+        "Network Capacity Charge [R/POD/day]": 155.32,
+        "Service and Administration Charge [R/POD/day]": 24.5,
+        "Generation Capacity Charge [R/POD/day]": 10.5
       },
       "Landrate 4": {
         "Energy Charge [c/kWh]": 369.32,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 61.66,
-        "Network Capacity Charge [R/Pod/Day]": 45.92,
-        "Generation Capacity Charge [R/Pod/Day]": 1.78
+        "Network Capacity Charge [R/POD/day]": 45.92,
+        "Generation Capacity Charge [R/POD/day]": 1.78
       },
       "LandrateDx*": {
-        "Service and Administration Charge [R/Pod/Day]": 87
+        "Service and Administration Charge [R/POD/day]": 87
       }
     }
   },
@@ -141,37 +141,37 @@ const RATE_DATA = {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 20.34,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 20.34,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 1.98
+        "Generation Capacity Charge [R/POD/day]": 1.98
       },
       "Municrate 2": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 30.21,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 30.21,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 2.95
+        "Generation Capacity Charge [R/POD/day]": 2.95
       },
       "Municrate 3": {
         "Energy Charge [c/kWh]": 224.93,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": 75.38,
-        "Service and Administration Charge [R/Pod/Day]": 14.70,
+        "Network Capacity Charge [R/POD/day]": 75.38,
+        "Service and Administration Charge [R/POD/day]": 14.70,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 7.37
+        "Generation Capacity Charge [R/POD/day]": 7.37
       },
       "Municrate 4": {
         "Energy Charge [c/kWh]": 350.09,
         "Ancillary Service Charge [c/kWh]": 0.41,
         "Netword Demand Charge [c/kWh]": 14.54,
-        "Network Capacity Charge [R/Pod/Day]": null,
-        "Service and Administration Charge [R/Pod/Day]": null,
+        "Network Capacity Charge [R/POD/day]": null,
+        "Service and Administration Charge [R/POD/day]": null,
         "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
-        "Generation Capacity Charge [R/Pod/Day]": 0.00
+        "Generation Capacity Charge [R/POD/day]": 0.00
       }
     }
   }
@@ -351,7 +351,7 @@ const els = {};
 function $(id){ return document.getElementById(id); }
 const unitOf = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergy = (k) => unitOf(k) === "c/kWh";
-const isFixed  = (k) => unitOf(k) === "R/Pod/Day";
+const isFixed  = (k) => unitOf(k) === "R/POD/day";
 
 const state = {
   vatInclusive: JSON.parse(localStorage.getItem(STORAGE_VAT) ?? "true")
@@ -513,7 +513,7 @@ function showRatesPanel(tariffKey){
       let display = "";
       if (u === "c/kWh") {
         display = `${val.toFixed(2)} c/kWh`;
-      } else if (u === "R/Pod/Day") {
+      } else if (u === "R/POD/day") {
         display = `R ${val.toFixed(2)} /POD/day`;
       } else {
         display = `R ${val.toFixed(2)}`;
@@ -549,6 +549,7 @@ function showRatesPanel(tariffKey){
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
+
 
 
 
