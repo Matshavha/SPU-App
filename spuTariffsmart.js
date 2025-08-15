@@ -193,7 +193,7 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>For prepaid options, energy-based charges may be combined for vending and daily fixed charges may also be combined. Time-of-Use applies where grid-tied generation is present.</p>
+      <p>For prepaid users, energy-based charges may be combined for vending and daily fixed charges may also be combined. Time-of-Use applies where grid-tied generation is present.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -219,7 +219,7 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>Prepaid configurations combine energy components for vending, and daily fixed components are combined.</p>
+      <p>For prepaid users, energy charges (c/kWh) may be combined for vending and daily fixed charges (R/POD/day) are combined.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -265,7 +265,7 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>Because fixed charges are not applied, the per-kWh energy price is higher than Homepower.</p>
+      <p>Homelight 20A is for indigent customers, while Homelight 60A is for medium to high usage</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -549,6 +549,7 @@ function showRatesPanel(tariffKey){
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
+
 
 
 
