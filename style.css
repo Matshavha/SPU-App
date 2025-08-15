@@ -404,11 +404,6 @@ footer.site-footer{
     z-index: 950;
   }
 
-  /* Optional: ensure main content can be wider than the viewport if needed */
-  main.content{
-    min-width: 100%;      /* baseline */
-    /* If you intentionally render wide tables/charts, they will create horizontal scroll */
-  }
-}
+
 
 
