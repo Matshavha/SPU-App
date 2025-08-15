@@ -369,6 +369,32 @@ footer.site-footer{
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
 
+/* ===== Sticky Header Banner ===== */
+:root{
+  /* controls banner height; adjust if needed */
+  --header-h: 72px;
+}
+
+.site-header{
+  position: sticky;
+  top: 0;
+  z-index: 900;                 /* ensures it stays above page content but below back-button */
+  background: var(--surface);   /* same background as cards */
+  box-shadow: var(--shadow);    /* subtle shadow when it sticks */
+}
+
+.site-header .header-banner{
+  width: 100%;
+  height: var(--header-h);
+  object-fit: cover;            /* keeps image proportions but crops if taller */
+  display: block;
+}
+
+/* Optional: smaller header on small screens */
+@media (max-width: 600px){
+  :root{ --header-h: 60px; }
+}
+
 
 
 
