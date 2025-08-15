@@ -369,29 +369,36 @@ footer.site-footer{
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
 
-/* ===== Mobile-only sticky header (no crop, no zoom) ===== */
+/* ===== Mobile-only: pin header & footer to the viewport, no crop/zoom ===== */
 @media (max-width: 600px){
+  /* Stop horizontal page scrolling so fixed header/footer won't shift */
+  html, body{
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Header fixed to top — unaffected by vertical or horizontal scroll */
   .site-header{
-    position: sticky;   /* pins at top while scrolling */
-    top: 0;
-    z-index: 900;       /* below .back-button (1000), above content */
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    width: 100vw;              /* fix to viewport width */
+    z-index: 950;              /* below .back-button (1000), above content */
     background: var(--surface);
     box-shadow: var(--shadow);
+    transform: translateZ(0);  /* helps avoid jitter on some mobile GPUs */
   }
   .site-header .header-banner{
     width: 100%;
-    height: auto;       /* preserve natural aspect ratio — no cropping */
+    height: auto;              /* preserve natural aspect ratio (no crop/zoom) */
     display: block;
   }
+
+  /* Footer fixed to bottom — same idea */
+  footer.site-footer{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100vw;
+    z-index: 950;
+    transform: translateZ(0);
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
