@@ -394,8 +394,7 @@ footer.site-footer{
     display: block;
   }
 
-  /* 
-  Footer pinned to the viewport bottom 
+  /* Footer pinned to the viewport bottom */
   footer.site-footer{
     position: fixed;
     bottom: 0;
@@ -404,7 +403,7 @@ footer.site-footer{
     width: 100vw;
     z-index: 950;
   }
-*/
+
 
 
 
