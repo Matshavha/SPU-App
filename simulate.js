@@ -228,8 +228,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (unit === 'c/kWh') {
           charge = (value / 100) * energy;
         } else if (unit === 'R/POD/day') {
-          charge = value * pods * days;
-        }
+          // Apportion the daily per-POD rate across the number of PODs
+          const podsCount = Math.max(1, Number.isFinite(pods) ? pods : 1);
+          charge = (value / podsCount) * days;
+       }
 
         const chargeWithVAT = charge * (1 + VAT_RATE);
         subtotal += chargeWithVAT;
@@ -283,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 `;
   });
 });
+
 
 
 
