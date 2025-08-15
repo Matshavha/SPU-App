@@ -368,3 +368,26 @@ footer.site-footer{
 .bg-green-25{ background: var(--green-25) !important; }
 .bg-orange-25{ background: var(--orange-25) !important; }
 .bg-teal-25{ background: var(--teal-25) !important; }
+
+/* ===== Mobile-only: fixed header & footer (no image crop), content scrolls underneath ===== */
+@media (max-width: 600px){
+  .site-header{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    width: 100%;            /* friendlier than 100vw for pinch-zoom */
+    z-index: 950;           /* below back-button (1000) */
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .site-header .header-banner{
+    width: 100%;
+    height: auto;           /* keep natural aspect ratio → no cropping */
+    display: block;
+  }
+  footer.site-footer{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100%;
+    z-index: 950;
+  }
+}
