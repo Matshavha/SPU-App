@@ -265,7 +265,7 @@ const QUICK_INFO = {
       </ul>
 
       <p><strong>Good to know</strong></p>
-      <p>Homelight 20A is for indigent customers, while Homelight 60A is for medium to high usage</p>
+      <p>Homelight 20A is for indigent customers, while Homelight 60A is for medium to high usage residential customers</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -549,6 +549,7 @@ function showRatesPanel(tariffKey){
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
+
 
 
 
