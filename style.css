@@ -391,3 +391,14 @@ footer.site-footer{
     z-index: 950;
   }
 }
+
+/* ===== Mobile-only: keep the back button fixed over the header ===== */
+@media (max-width: 600px){
+  .back-button{
+    position: fixed;  /* anchor to the viewport, not the page */
+    top: 1px;
+    left: -1px;
+    z-index: 1000;    /* above the header (which is ~950) */
+  }
+}
+
