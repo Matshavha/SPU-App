@@ -174,7 +174,7 @@ const state = {
   selected: [],
   vatInclusive: true,
   kwh: 500,
-  days: 30,
+  days: 30.437,
   breakdownOpen: false
 };
 
@@ -230,13 +230,14 @@ document.addEventListener("DOMContentLoaded", () => {
     state.kwh = Math.max(0, Number(dom.kwhInput.value) || 0);
     renderAll();
   });
-  dom.daysInput.addEventListener("input", () => {
-    let d = Math.floor(Number(dom.daysInput.value) || 0);
-    if (d < 1) d = 1; if (d > 31) d = 31;
-    dom.daysInput.value = d;
-    state.days = d;
-    renderAll();
-  });
+dom.daysInput.addEventListener("input", () => {
+  let d = parseFloat(dom.daysInput.value);
+  if (!Number.isFinite(d)) d = 1;
+  if (d < 1) d = 1; if (d > 31) d = 31;
+  dom.daysInput.value = d;
+  state.days = d;
+  renderAll();
+});
 
   // Clear selection
   dom.clearSelBtn.addEventListener("click", () => {
@@ -669,6 +670,7 @@ function renderBreakdown(){
   const legendLabels = CANON_ORDER.filter(lbl => seen.has(lbl));
   renderGlobalLegend(dom.piesLegend, legendLabels, COLOR_MAP);
 }
+
 
 
 
