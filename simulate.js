@@ -6,7 +6,7 @@ const tariffData = [
     "Tariff": "Businessrate 1",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 14.54,
+    "Network Demand Charge [c/kWh]": 14.54,
     "Network Capacity Charge [R/POD/day]": 20.34,
     "Service and Administration Charge [R/POD/day]": 14.70,
     "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
@@ -16,7 +16,7 @@ const tariffData = [
     "Tariff": "Businessrate 2",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 14.54,
+    "Network Demand Charge [c/kWh]": 14.54,
     "Network Capacity Charge [R/POD/day]": 30.21,
     "Service and Administration Charge [R/POD/day]": 14.70,
     "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
@@ -26,7 +26,7 @@ const tariffData = [
     "Tariff": "Businessrate 3",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 14.54,
+    "Network Demand Charge [c/kWh]": 14.54,
     "Network Capacity Charge [R/POD/day]": 75.38,
     "Service and Administration Charge [R/POD/day]": 14.70,
     "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
@@ -36,7 +36,7 @@ const tariffData = [
     "Tariff": "Businessrate 4",
     "Energy Charge [c/kWh]": 350.09,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 14.54,
+    "Network Demand Charge [c/kWh]": 14.54,
     "Network Capacity Charge [R/POD/day]": null,
     "Service and Administration Charge [R/POD/day]": null,
     "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94,
@@ -46,7 +46,7 @@ const tariffData = [
     "Tariff": "Homepower 1",
     "Energy Charge [c/kWh]": 268.78,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 26.37,
+    "Network Demand Charge [c/kWh]": 26.37,
     "Network Capacity Charge [R/POD/day]": 12.13,
     "Service and Administration Charge [R/POD/day]": 3.27,
     "Generation Capacity Charge [R/POD/day]": 0.72
@@ -55,7 +55,7 @@ const tariffData = [
     "Tariff": "Homepower 2",
     "Energy Charge [c/kWh]": 268.78,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 26.37,
+    "Network Demand Charge [c/kWh]": 26.37,
     "Network Capacity Charge [R/POD/day]": 27.07,
     "Service and Administration Charge [R/POD/day]": 3.27,
     "Generation Capacity Charge [R/POD/day]": 1.27
@@ -64,7 +64,7 @@ const tariffData = [
     "Tariff": "Homepower 3",
     "Energy Charge [c/kWh]": 268.78,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 26.37,
+    "Network Demand Charge [c/kWh]": 26.37,
     "Network Capacity Charge [R/POD/day]": 57.82,
     "Service and Administration Charge [R/POD/day]": 3.27,
     "Generation Capacity Charge [R/POD/day]": 3.1
@@ -73,7 +73,7 @@ const tariffData = [
     "Tariff": "Homepower 4",
     "Energy Charge [c/kWh]": 268.78,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 26.37,
+    "Network Demand Charge [c/kWh]": 26.37,
     "Network Capacity Charge [R/POD/day]": 8.35,
     "Service and Administration Charge [R/POD/day]": 3.27,
     "Generation Capacity Charge [R/POD/day]": 0.47
@@ -82,7 +82,7 @@ const tariffData = [
     "Tariff": "Homepower Bulk",
     "Energy Charge [c/kWh]": 268.78,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 26.37,
+    "Network Demand Charge [c/kWh]": 26.37,
     "Network Capacity Charge [R/POD/day]": 8.35,
     "Service and Administration Charge [R/POD/day]": 3.27,
     "Generation Capacity Charge [R/POD/day]": 4.48
@@ -99,7 +99,7 @@ const tariffData = [
     "Tariff": "Landrate 1",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 61.66,
+    "Network Demand Charge [c/kWh]": 61.66,
     "Network Capacity Charge [R/POD/day]": 62.2,
     "Service and Administration Charge [R/POD/day]": 24.5,
     "Generation Capacity Charge [R/POD/day]": 2.71
@@ -108,7 +108,7 @@ const tariffData = [
     "Tariff": "Landrate 2",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 61.66,
+    "Network Demand Charge [c/kWh]": 61.66,
     "Network Capacity Charge [R/POD/day]": 96.99,
     "Service and Administration Charge [R/POD/day]": 24.5,
     "Generation Capacity Charge [R/POD/day]": 5.37
@@ -117,7 +117,7 @@ const tariffData = [
     "Tariff": "Landrate 3",
     "Energy Charge [c/kWh]": 224.93,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 61.66,
+    "Network Demand Charge [c/kWh]": 61.66,
     "Network Capacity Charge [R/POD/day]": 155.32,
     "Service and Administration Charge [R/POD/day]": 24.5,
     "Generation Capacity Charge [R/POD/day]": 10.5
@@ -126,7 +126,7 @@ const tariffData = [
     "Tariff": "Landrate 4",
     "Energy Charge [c/kWh]": 369.32,
     "Ancillary Service Charge [c/kWh]": 0.41,
-    "Netword Demand Charge [c/kWh]": 61.66,
+    "Network Demand Charge [c/kWh]": 61.66,
     "Network Capacity Charge [R/POD/day]": 45.92,
     "Generation Capacity Charge [R/POD/day]": 1.78
   },
@@ -285,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 `;
   });
 });
+
 
 
 
