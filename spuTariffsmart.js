@@ -174,6 +174,80 @@ const RATE_DATA = {
         "Generation Capacity Charge [R/POD/day]": 0.00
       }
     }
+  },
+
+  // -------------------- NEW: Homeflex --------------------
+  Homeflex: {
+    variants: {
+      // VAT-exclusive values; keys carry units so the filters work.
+      "Homeflex 1": {
+        // Active Energy (TOU + season)
+        "Active Energy (High) Peak [c/kWh]": 706.97,
+        "Active Energy (High) Standard [c/kWh]": 216.31,
+        "Active Energy (High) Off-Peak [c/kWh]": 159.26,
+        "Active Energy (Low) Peak [c/kWh]": 329.28,
+        "Active Energy (Low) Standard [c/kWh]": 204.90,
+        "Active Energy (Low) Off-Peak [c/kWh]": 159.26,
+
+        // Other energy-linked charges
+        "Legacy Charge [c/kWh]": 22.78,
+        "Network Demand Charge [c/kWh]": 26.37,
+        "Ancillary Service Charge [c/kWh]": 0.41,
+
+        // Daily fixed charges
+        "Network Capacity Charge [R/POD/day]": 12.13,
+        "Generation Capacity Charge [R/POD/day]": 0.72,
+        "Service and Administration Charge [R/POD/day]": 3.27
+      },
+      "Homeflex 2": {
+        "Active Energy (High) Peak [c/kWh]": 706.97,
+        "Active Energy (High) Standard [c/kWh]": 216.31,
+        "Active Energy (High) Off-Peak [c/kWh]": 159.26,
+        "Active Energy (Low) Peak [c/kWh]": 329.28,
+        "Active Energy (Low) Standard [c/kWh]": 204.90,
+        "Active Energy (Low) Off-Peak [c/kWh]": 159.26,
+
+        "Legacy Charge [c/kWh]": 22.78,
+        "Network Demand Charge [c/kWh]": 26.37,
+        "Ancillary Service Charge [c/kWh]": 0.41,
+
+        "Network Capacity Charge [R/POD/day]": 27.07,
+        "Generation Capacity Charge [R/POD/day]": 1.27,
+        "Service and Administration Charge [R/POD/day]": 3.27
+      },
+      "Homeflex 3": {
+        "Active Energy (High) Peak [c/kWh]": 706.97,
+        "Active Energy (High) Standard [c/kWh]": 216.31,
+        "Active Energy (High) Off-Peak [c/kWh]": 159.26,
+        "Active Energy (Low) Peak [c/kWh]": 329.28,
+        "Active Energy (Low) Standard [c/kWh]": 204.90,
+        "Active Energy (Low) Off-Peak [c/kWh]": 159.26,
+
+        "Legacy Charge [c/kWh]": 22.78,
+        "Network Demand Charge [c/kWh]": 26.37,
+        "Ancillary Service Charge [c/kWh]": 0.41,
+
+        "Network Capacity Charge [R/POD/day]": 57.82,
+        "Generation Capacity Charge [R/POD/day]": 3.10,
+        "Service and Administration Charge [R/POD/day]": 3.27
+      },
+      "Homeflex 4": {
+        "Active Energy (High) Peak [c/kWh]": 706.97,
+        "Active Energy (High) Standard [c/kWh]": 216.31,
+        "Active Energy (High) Off-Peak [c/kWh]": 159.26,
+        "Active Energy (Low) Peak [c/kWh]": 329.28,
+        "Active Energy (Low) Standard [c/kWh]": 204.90,
+        "Active Energy (Low) Off-Peak [c/kWh]": 159.26,
+
+        "Legacy Charge [c/kWh]": 22.78,
+        "Network Demand Charge [c/kWh]": 26.37,
+        "Ancillary Service Charge [c/kWh]": 0.41,
+
+        "Network Capacity Charge [R/POD/day]": 8.35,
+        "Generation Capacity Charge [R/POD/day]": 0.47,
+        "Service and Administration Charge [R/POD/day]": 3.27
+      }
+    }
   }
 };
 
@@ -343,6 +417,35 @@ const QUICK_INFO = {
         <li><strong>Municrate 4</strong>: same sizes as Municrate 1 (conv./prepaid)</li>
       </ul>
     `
+  },
+
+  // -------------------- NEW: Homeflex (two PDFs) --------------------
+  Homeflex: {
+    // Two-part PDF; viewer will expose Part 2 buttons automatically
+    files: ["Homeflex.pdf", "Homeflex2.pdf"], // keep file names in assets/pdfs/
+    title: "Homeflex — Non-Local Authority (Residential, TOU + Gen-Offset)",
+    descriptionHTML: `
+      <p><strong>Overview</strong></p>
+      <p>A Time-of-Use (TOU) residential tariff for customers up to 100&nbsp;kVA, including those with <em>grid-tied generation</em> (Gen-Offset / net billing).</p>
+
+      <p><strong>How you’re charged</strong></p>
+      <ul>
+        <li><em>Active Energy (c/kWh)</em>, TOU &amp; season-differentiated (peak/standard/off-peak; high season Jun–Aug, low season Sep–May).</li>
+        <li><em>Legacy</em>, <em>Network Demand</em>, and <em>Ancillary Service</em> charges (c/kWh).</li>
+        <li><em>Network Capacity</em>, <em>Generation Capacity</em>, and <em>Service &amp; Administration</em> as daily fixed charges (R/POD/day).</li>
+      </ul>
+
+      <p><strong>Good to know</strong></p>
+      <p>Gen-Offset credits are applied by TOU period to eligible exports; public-holiday handling follows the booklet rules.</p>
+    `,
+    supplyHTML: `
+      <ul class="tight-list">
+        <li><strong>Homeflex 1</strong>: 2-phase 32&nbsp;kVA (80&nbsp;A/phase); 3-phase 25&nbsp;kVA (40&nbsp;A/phase)</li>
+        <li><strong>Homeflex 2</strong>: 2-phase 64&nbsp;kVA (150&nbsp;A/phase); 3-phase 50&nbsp;kVA (80&nbsp;A/phase)</li>
+        <li><strong>Homeflex 3</strong>: 2-phase 100&nbsp;kVA (225&nbsp;A/phase); 3-phase 100&nbsp;kVA (150&nbsp;A/phase)</li>
+        <li><strong>Homeflex 4</strong>: 1-phase 16&nbsp;kVA (80&nbsp;A)</li>
+      </ul>
+    `
   }
 };
 
@@ -390,8 +493,12 @@ function loadTariff(key){
   els.wrap.style.display = "";
   els.title.textContent = meta.title;
 
+  // -------- multi-file aware viewer setup --------
+  const files = meta.files || (meta.file ? [meta.file] : []);
+  const primary = files[0];
+  const clean = PDF_BASE + primary;
+
   // Inline PDF — try iframe first, fallback to embed if needed
-  const clean = PDF_BASE + meta.file;
   const urlIframe = clean + "#view=FitH";
   els.iframe.src = urlIframe;
   els.iframe.removeAttribute("hidden");
@@ -407,7 +514,30 @@ function loadTariff(key){
 
   els.view.href = clean;
   els.dl.href   = clean;
-  els.dl.setAttribute("download", meta.file);
+  els.dl.setAttribute("download", primary);
+
+  // Add/remove extra Part 2 buttons dynamically
+  const actions = document.querySelector(".viewer-actions");
+  Array.from(actions.querySelectorAll(".btn.extra")).forEach(b => b.remove());
+
+  if (files.length > 1) {
+    const second = PDF_BASE + files[1];
+
+    const v2 = document.createElement("a");
+    v2.className = "btn extra";
+    v2.target = "_blank";
+    v2.rel = "noopener";
+    v2.href = second;
+    v2.innerHTML = `<i class="fas fa-external-link-alt"></i> View (Part&nbsp;2)`;
+    actions.appendChild(v2);
+
+    const d2 = document.createElement("a");
+    d2.className = "btn primary extra";
+    d2.download = files[1];
+    d2.href = second;
+    d2.innerHTML = `<i class="fas fa-download"></i> Download (Part&nbsp;2)`;
+    actions.appendChild(d2);
+  }
 
   // Build three quick cards
   els.cardsWrap.innerHTML = "";
@@ -549,11 +679,3 @@ function showRatesPanel(tariffKey){
   els.panelB.appendChild(tableWrap);
   els.panel.classList.add("show");
 }
-
-
-
-
-
-
-
-
