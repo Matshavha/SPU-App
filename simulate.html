@@ -149,19 +149,46 @@
     <form id="billForm" class="form-section">
       <label for="tariff">Tariff</label>
       <select id="tariff" required></select>
-
-      <label for="energy">Energy [kWh]</label>
-      <input type="number" id="energy" required />
-
+    
+      <!-- Single-energy input (non-Homeflex) -->
+      <div id="blockSimpleEnergy">
+        <label for="energy">Energy [kWh]</label>
+        <input type="number" id="energy" min="0" step="0.01" />
+      </div>
+    
+      <!-- Homeflex TOU inputs (shown only for Homeflex 1–4) -->
+      <div id="blockHomeflex" style="display:none;">
+        <div class="note" style="margin-bottom:.5rem;">
+          Enter total kWh for the whole period. Exports are rebated per TOU,
+          but cannot exceed consumption in that TOU.
+        </div>
+    
+        <strong>Consumption (kWh)</strong>
+        <label for="hf_peak_kwh">Peak</label>
+        <input type="number" id="hf_peak_kwh" min="0" step="0.01" value="0" />
+        <label for="hf_std_kwh">Standard</label>
+        <input type="number" id="hf_std_kwh" min="0" step="0.01" value="0" />
+        <label for="hf_off_kwh">Off-peak</label>
+        <input type="number" id="hf_off_kwh" min="0" step="0.01" value="0" />
+    
+        <strong style="margin-top:.5rem;">Export (kWh)</strong>
+        <label for="hf_peak_exp">Peak export</label>
+        <input type="number" id="hf_peak_exp" min="0" step="0.01" value="0" />
+        <label for="hf_std_exp">Standard export</label>
+        <input type="number" id="hf_std_exp" min="0" step="0.01" value="0" />
+        <label for="hf_off_exp">Off-peak export</label>
+        <input type="number" id="hf_off_exp" min="0" step="0.01" value="0" />
+      </div>
+    
       <label for="pods">Number of PODs</label>
       <input type="number" id="pods" value="1" min="1" required />
-
+    
       <label for="start">Start Date</label>
       <input type="date" id="start" required />
-
+    
       <label for="end">End Date</label>
       <input type="date" id="end" required />
-
+    
       <button type="submit">Calculate</button>
     </form>
 
@@ -213,6 +240,7 @@
 </footer>
 </body>
 </html>
+
 
 
 
