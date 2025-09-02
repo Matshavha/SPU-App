@@ -1,6 +1,10 @@
-// ✅ simulate.js — TOU Homeflex tariffs (Peak/Standard/Off-peak + Gen-offset credits capped by TOU consumption)
-// Seasonal proration by actual date range (High: Jun–Aug, Low: Sep–May). VAT included in totals.
-// UI: works with the same simulate.html you shared (simple block + Homeflex block).
+// ✅ simulate.js — Homeflex TOU with weekday/Saturday/Sunday + SA public holidays treated as Sunday
+// - Applies correct Peak / Standard / Off-peak windows per *season* (High: Jun–Aug; Low: Sep–May)
+//   and per *day type* (Weekday, Saturday, Sunday/Public holiday).
+// - Uses users’ TOU kWh inputs (Peak/Standard/Off-peak + Exports) and splits those kWh
+//   across High vs Low season in proportion to the actual TOU hours present in the selected date range.
+// - Gen-offset credits are capped per TOU: rebate export ≤ consumption for that TOU.
+// - All rates in data are VAT-exclusive; table shows amounts VAT-inclusive.
 
 // ---------------- VAT ----------------
 const VAT_RATE = 0.15;
@@ -14,17 +18,149 @@ function daysBetween(start, end) {
 }
 function formatRands(value) { return `R ${value.toFixed(2)}`; }
 function formatRateRands(value) { return `R ${value.toFixed(2)}`; }
+function iso(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
-// Count days in high (Jun–Aug) vs low (Sep–May) inside range
-function seasonDaySplit(startISO, endISO) {
-  const s = new Date(startISO), e = new Date(endISO);
-  let high = 0, low = 0;
-  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
-    const m = d.getMonth(); // 0=Jan
-    if (m === 5 || m === 6 || m === 7) high += 1; else low += 1;
+// ---------------- SA Public Holidays (treated as Sunday) ----------------
+// Easter (Meeus/Jones/Butcher algorithm)
+function easterDate(y) {
+  const a = y % 19;
+  const b = Math.floor(y / 100);
+  const c = y % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1; // 0=Jan
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(y, month, day);
+}
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function observedIfSunday(d){ // SA: if holiday falls on Sunday, following Monday is a public holiday
+  const list = new Set([iso(d)]);
+  if (d.getDay() === 0) list.add(iso(addDays(d,1)));
+  return list;
+}
+function saPublicHolidays(year){
+  const set = new Set();
+  // Fixed
+  [new Date(year,0,1),  // New Year’s Day
+   new Date(year,2,21), // Human Rights Day
+   new Date(year,3,27), // Freedom Day
+   new Date(year,4,1),  // Workers’ Day
+   new Date(year,5,16), // Youth Day
+   new Date(year,7,9),  // National Women’s Day
+   new Date(year,8,24), // Heritage Day
+   new Date(year,11,16),// Day of Reconciliation
+   new Date(year,11,25),// Christmas Day
+   new Date(year,11,26) // Day of Goodwill
+  ].forEach(d => observedIfSunday(d).forEach(s => set.add(s)));
+
+  // Moveable: Good Friday, Family Day (Easter Monday)
+  const easter = easterDate(year);
+  const goodFri = addDays(easter, -2);
+  const easterMon = addDays(easter, +1);
+  set.add(iso(goodFri));
+  set.add(iso(easterMon));
+  return set;
+}
+function buildHolidaySet(fromISO, toISO){
+  const s = new Date(fromISO), e = new Date(toISO);
+  const years = new Set([s.getFullYear(), e.getFullYear()]);
+  const set = new Set();
+  years.forEach(y => saPublicHolidays(y).forEach(x => set.add(x)));
+  return set;
+}
+
+// ---------------- Homeflex TOU clock (hours are [start, end) 24h local) ----------------
+// Derived from your TOU wheels:
+// High-demand (Jun–Aug):
+//   Weekday: Peak 06–08 & 18–21; Standard 08–18 & 21–22; Off-peak 22–06
+//   Saturday: Peak —; Standard 07–08 & 18–22; Off-peak rest
+//   Sunday/PH: Peak —; Standard 19–21; Off-peak rest
+// Low-demand (Sep–May):
+//   Weekday: Peak 07–08 & 20–21; Standard 06–07 & 18–20 & 21–22; Off-peak 22–06
+//   Saturday: Peak 07–08 & 19–20; Standard 06–07 & 18–19 & 20–22; Off-peak rest
+//   Sunday/PH: Peak 07–08 & 19–20; Standard 06–07 & 20–22; Off-peak rest
+const HF_TOU = {
+  high: {
+    weekday: {
+      peak:     [[6,8],[18,21]],
+      standard: [[8,18],[21,22]],
+      offpeak:  [[22,24],[0,6]]
+    },
+    saturday: {
+      peak:     [],
+      standard: [[7,8],[18,22]],
+      offpeak:  [[22,24],[0,7],[8,18]]
+    },
+    sunday: {
+      peak:     [],
+      standard: [[19,21]],
+      offpeak:  [[21,24],[0,19]]
+    }
+  },
+  low: {
+    weekday: {
+      peak:     [[7,8],[20,21]],
+      standard: [[6,7],[18,20],[21,22]],
+      offpeak:  [[22,24],[0,6]]
+    },
+    saturday: {
+      peak:     [[7,8],[19,20]],
+      standard: [[6,7],[18,19],[20,22]],
+      offpeak:  [[22,24],[0,6],[8,18]]
+    },
+    sunday: {
+      peak:     [[7,8],[19,20]],
+      standard: [[6,7],[20,22]],
+      offpeak:  [[22,24],[0,6],[8,19]]
+    }
   }
-  const total = high + low;
-  return { high, low, total, fHigh: total ? high / total : 0, fLow: total ? low / total : 0 };
+};
+function inAny(hour, ranges){ return ranges.some(([a,b]) => (hour>=a && hour<b)); }
+function dayTypeOf(date, holidaySet){
+  const d = date.getDay();
+  if (holidaySet.has(iso(date))) return 'sunday'; // treat PH as Sunday
+  if (d === 6) return 'saturday';
+  if (d === 0) return 'sunday';
+  return 'weekday';
+}
+function seasonOf(date){
+  const m = date.getMonth(); // 0=Jan
+  return (m===5 || m===6 || m===7) ? 'high' : 'low';
+}
+function bandOfHour(date, holidaySet){
+  const season = seasonOf(date);
+  const type = dayTypeOf(date, holidaySet);
+  const hour = date.getHours();
+  const cfg = HF_TOU[season][type];
+  if (inAny(hour, cfg.peak)) return 'peak';
+  if (inAny(hour, cfg.standard)) return 'standard';
+  return 'offpeak';
+}
+
+// Count *hours* within range for each {season, band}
+function countTouHours(startISO, endISO){
+  const holidaySet = buildHolidaySet(startISO, endISO);
+  const s = new Date(startISO);
+  const e = new Date(endISO);
+  // normalize to top of hour start/end inclusive of end’s last day 23:00
+  const cursor = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0, 0);
+  const endHour = new Date(e.getFullYear(), e.getMonth(), e.getDate(), 23, 0, 0);
+
+  const counts = { high: { peak:0, standard:0, offpeak:0 }, low: { peak:0, standard:0, offpeak:0 } };
+  while (cursor <= endHour) {
+    const season = seasonOf(cursor);
+    const band = bandOfHour(cursor, holidaySet);
+    counts[season][band] += 1;
+    cursor.setHours(cursor.getHours()+1);
+  }
+  return counts;
 }
 
 // ---------------- Embedded tariff data (VAT-exclusive) ----------------
@@ -58,7 +194,7 @@ const tariffData = [
   {"Tariff":"Municrate 3","Energy Charge [c/kWh]":229.79,"Ancillary Service Charge [c/kWh]":0.41,"Network Demand Charge [c/kWh]":43.60,"Network Capacity Charge [R/POD/day]":138.21,"Service and Administration Charge [R/POD/day]":18.81,"Generation Capacity Charge [R/POD/day]":8.46},
   {"Tariff":"Municrate 4","Energy Charge [c/kWh]":349.28,"Ancillary Service Charge [c/kWh]":0.41,"Network Demand Charge [c/kWh]":43.60,"Network Capacity Charge [R/POD/day]":null,"Service and Administration Charge [R/POD/day]":null,"Generation Capacity Charge [R/POD/day]":null},
 
-  // ---------------- Homeflex (variants with fixed + other c/kWh; energy is TOU below) ----------------
+  // ---------------- Homeflex variants (fixed + other c/kWh; TOU energy is separate) ----------------
   {"Tariff":"Homeflex 1","Legacy Charge [c/kWh]":22.78,"Network Demand Charge [c/kWh]":26.37,"Ancillary Service Charge [c/kWh]":0.41,"Network Capacity Charge [R/POD/day]":12.13,"Generation Capacity Charge [R/POD/day]":0.72,"Service and Administration Charge [R/POD/day]":3.27},
   {"Tariff":"Homeflex 2","Legacy Charge [c/kWh]":22.78,"Network Demand Charge [c/kWh]":26.37,"Ancillary Service Charge [c/kWh]":0.41,"Network Capacity Charge [R/POD/day]":27.07,"Generation Capacity Charge [R/POD/day]":1.27,"Service and Administration Charge [R/POD/day]":3.27},
   {"Tariff":"Homeflex 3","Legacy Charge [c/kWh]":22.78,"Network Demand Charge [c/kWh]":26.37,"Ancillary Service Charge [c/kWh]":0.41,"Network Capacity Charge [R/POD/day]":57.82,"Generation Capacity Charge [R/POD/day]":3.10,"Service and Administration Charge [R/POD/day]":3.27},
@@ -70,7 +206,7 @@ const HF_ENERGY = {
   high: { peak: 706.97, standard: 216.31, offpeak: 159.26 },
   low:  { peak: 329.28, standard: 204.90, offpeak: 159.26 }
 };
-// From the Gen-offset table (rebate rates, VAT-exclusive)
+// Gen-offset (rebate) rates — VAT-exclusive
 const HF_REBATE = {
   high: { peak: 650.52, standard: 185.41, offpeak: 131.21 },
   low:  { peak: 292.75, standard: 174.58, offpeak: 131.21 }
@@ -110,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const month = today.getMonth();
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
-  const fmt = (d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const fmt = (d)=>iso(d);
   document.getElementById('start').value = fmt(start);
   document.getElementById('end').value = fmt(end);
   const podsInput = document.getElementById('pods');
@@ -126,17 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const startISO = document.getElementById('start').value;
     const endISO   = document.getElementById('end').value;
     const days = daysBetween(startISO, endISO);
-    const { fHigh, fLow } = seasonDaySplit(startISO, endISO);
 
     const breakdown = [];
     let subtotal = 0;
-
-    // push a line (adds VAT)
-    function addLine(label, baseAmountExVAT, rateDisplay=''){
+    const addLine = (label, baseAmountExVAT, rateDisplay='') => {
       const amountInc = baseAmountExVAT * (1 + VAT_RATE);
       subtotal += amountInc;
       breakdown.push({ name: label, rateDisplay, amountInc });
-    }
+    };
 
     // ---------------- Non-Homeflex flow ----------------
     if (!isHomeflex(selected['Tariff'])) {
@@ -162,8 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     } else {
-      // ---------------- Homeflex flow (TOU + Gen-offset credits) ----------------
-      // Read TOU consumptions (kWh) and exports (kWh)
+      // ---------------- Homeflex flow: TOU hour map by season + PH as Sunday ----------------
+      // Gather inputs
       const peakK = parseFloat(document.getElementById('hf_peak_kwh').value || '0');
       const stdK  = parseFloat(document.getElementById('hf_std_kwh').value  || '0');
       const offK  = parseFloat(document.getElementById('hf_off_kwh').value  || '0');
@@ -172,15 +305,42 @@ document.addEventListener('DOMContentLoaded', () => {
       const stdX  = parseFloat(document.getElementById('hf_std_exp').value  || '0');
       const offX  = parseFloat(document.getElementById('hf_off_exp').value  || '0');
 
-      const totalEnergy = peakK + stdK + offK;
+      const hourCounts = countTouHours(startISO, endISO);
+      const bandHours = {
+        peak: hourCounts.high.peak + hourCounts.low.peak,
+        standard: hourCounts.high.standard + hourCounts.low.standard,
+        offpeak: hourCounts.high.offpeak + hourCounts.low.offpeak
+      };
 
-      // Energy charges (TOU) — prorate by season-day fractions
-      function energyChargeEx(energyKWh, rateHigh, rateLow){
-        return (energyKWh * fHigh * (rateHigh/100)) + (energyKWh * fLow * (rateLow/100));
+      // Helper to season-split a given band kWh by actual hours in the range
+      function splitBySeason(band, kwh){
+        const totalH = bandHours[band] || 0;
+        if (!totalH || kwh <= 0) return { high:0, low:0 };
+        const hi = hourCounts.high[band] || 0;
+        const lo = hourCounts.low[band]  || 0;
+        const fHi = hi / totalH;
+        const fLo = lo / totalH;
+        return { high: kwh * fHi, low: kwh * fLo };
       }
-      const energyPeakEx = energyChargeEx(peakK, HF_ENERGY.high.peak, HF_ENERGY.low.peak);
-      const energyStdEx  = energyChargeEx(stdK,  HF_ENERGY.high.standard, HF_ENERGY.low.standard);
-      const energyOffEx  = energyChargeEx(offK,  HF_ENERGY.high.offpeak,  HF_ENERGY.low.offpeak);
+
+      const cons = {
+        peak: splitBySeason('peak', peakK),
+        standard: splitBySeason('standard', stdK),
+        offpeak: splitBySeason('offpeak', offK)
+      };
+      const exp  = {
+        peak: splitBySeason('peak', peakX),
+        standard: splitBySeason('standard', stdX),
+        offpeak: splitBySeason('offpeak', offX)
+      };
+
+      // Energy charges per season (c/kWh → R)
+      function energyChargeEx(consSplit, rates) {
+        return (consSplit.high * rates.high / 100) + (consSplit.low * rates.low / 100);
+      }
+      const energyPeakEx = energyChargeEx(cons.peak,    {high:HF_ENERGY.high.peak,    low:HF_ENERGY.low.peak});
+      const energyStdEx  = energyChargeEx(cons.standard,{high:HF_ENERGY.high.standard,low:HF_ENERGY.low.standard});
+      const energyOffEx  = energyChargeEx(cons.offpeak, {high:HF_ENERGY.high.offpeak, low:HF_ENERGY.low.offpeak});
 
       addLine("Active Energy — Peak (TOU)",
               energyPeakEx,
@@ -192,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
               energyOffEx,
               `${(HF_ENERGY.high.offpeak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.offpeak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
 
-      // Other energy-linked charges on total energy
+      // Other energy-linked charges on *total* energy (unchanged)
+      const totalEnergy = peakK + stdK + offK;
       const legacyEx    = (selected["Legacy Charge [c/kWh]"]                || 0) / 100 * totalEnergy;
       const ndemandEx   = (selected["Network Demand Charge [c/kWh]"]        || 0) / 100 * totalEnergy
                         + (selected["Netword Demand Charge [c/kWh]"]        || 0) / 100 * totalEnergy; // accept both spellings
@@ -204,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ancillaryEx>0) addLine("Ancillary Service Charge", ancillaryEx, `${(selected["Ancillary Service Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
       if (electSubEx>0)  addLine("Electrification & Rural Network Subsidy", electSubEx, `${(selected["Electrification and Rural Network Subsidy Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
 
-      // Fixed daily charges (per-POD share as per your existing model)
+      // Fixed daily charges (per-POD share, to match your previous model)
       const ncap   = selected["Network Capacity Charge [R/POD/day]"] || 0;
       const gcap   = selected["Generation Capacity Charge [R/POD/day]"] || 0;
       const sadmin = selected["Service and Administration Charge [R/POD/day]"] || 0;
@@ -213,14 +374,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (gcap)   addLine("Generation Capacity Charge",(gcap / pods) * days, `${formatRateRands(gcap*(1+VAT_RATE))} /POD/day`);
       if (sadmin) addLine("Service & Administration",  (sadmin / pods) * days, `${formatRateRands(sadmin*(1+VAT_RATE))} /POD/day`);
 
-      // -------- Gen-offset credits (negative lines), capped at consumption per TOU --------
-      function rebateCreditEx(exportKWh, consKWh, rHigh, rLow){
-        const eligible = Math.min(exportKWh, consKWh);
-        return eligible * fHigh * (rHigh/100) + eligible * fLow * (rLow/100);
+      // -------- Gen-offset credits (negative), capped per TOU & split by season hours --------
+      function rebateCreditEx(expSplit, consSplit, rates){
+        // Cap exports by consumption per season separately
+        const hiK = Math.min(expSplit.high, consSplit.high);
+        const loK = Math.min(expSplit.low,  consSplit.low);
+        return hiK * (rates.high/100) + loK * (rates.low/100);
       }
-      const creditPeakEx = rebateCreditEx(peakX, peakK, HF_REBATE.high.peak, HF_REBATE.low.peak);
-      const creditStdEx  = rebateCreditEx(stdX,  stdK,  HF_REBATE.high.standard, HF_REBATE.low.standard);
-      const creditOffEx  = rebateCreditEx(offX,  offK,  HF_REBATE.high.offpeak,  HF_REBATE.low.offpeak);
+      const creditPeakEx = rebateCreditEx(exp.peak,    cons.peak,    {high:HF_REBATE.high.peak,    low:HF_REBATE.low.peak});
+      const creditStdEx  = rebateCreditEx(exp.standard,cons.standard,{high:HF_REBATE.high.standard,low:HF_REBATE.low.standard});
+      const creditOffEx  = rebateCreditEx(exp.offpeak, cons.offpeak, {high:HF_REBATE.high.offpeak, low:HF_REBATE.low.offpeak});
 
       addLine("Gen-offset Credit — Peak",    -creditPeakEx,  `${(HF_REBATE.high.peak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.peak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
       addLine("Gen-offset Credit — Standard",-creditStdEx,   `${(HF_REBATE.high.standard*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.standard*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
@@ -255,10 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </table>
       </div>
       <p style="font-style:italic; color:#555;">
-        All rates and amounts include VAT at 15%. Seasonal split (High: Jun–Aug; Low: Sep–May) is applied by day-count within your selected dates.
+        VAT 15% included. TOU hours follow your tariff booklet: weekday / Saturday / Sunday with South African public holidays treated as Sunday.
+        Seasonal split (High: Jun–Aug; Low: Sep–May) and the actual calendar in your date range are applied hour-by-hour.
       </p>
     `;
   });
 });
+
+
 
 
