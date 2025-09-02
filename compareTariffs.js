@@ -1,7 +1,3 @@
-// compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
-// Homeflex support: TOU consumption + export, per-TOU rebate cap, seasonal proration (date-aware via URL or inferred month),
-// Legacy c/kWh included, VAT math aligned. UI structure unchanged.
-
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
 
@@ -776,3 +772,4 @@ function drawDonut(container, title, items) {
 function polarToCartesian(cx, cy, r, angleRad){
   return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
+
