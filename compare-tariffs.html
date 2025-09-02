@@ -67,8 +67,8 @@
     <section class="card" style="margin-bottom:1rem;">
       <h2>Step 4 — Bill inputs</h2>
 
-      <!-- Generic inputs (used for all non-Homeflex tariffs) -->
-      <div id="genericInputs" style="display:flex;flex-wrap:wrap;gap:1rem;">
+      <!-- Generic inputs (non-Homeflex & also used for non-active energy parts) -->
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;">
         <label>Monthly energy (kWh)
           <input id="kwhInput" type="number" min="0" step="0.1" value="500" style="width:160px;">
         </label>
@@ -76,51 +76,33 @@
           <input id="daysInput" type="number" min="1" max="31" step="0.001" value="30.437" style="width:160px;">
         </label>
       </div>
+      <p class="muted" style="margin-top:.5rem;">We compare the estimated monthly bill from energy + fixed daily charges.</p>
 
-      <!-- Homeflex TOU inputs (auto-show when any Homeflex tariff is selected) -->
-      <div id="homeflexInputs" style="display:none; margin-top:1rem;">
-        <div class="note" style="margin-bottom:.75rem;">
-          Homeflex uses Time-of-Use. Enter Consumption (kWh) and Export (kWh). Export rebate per TOU is capped at the matching consumption.
-        </div>
+      <!-- Homeflex TOU inputs (shown only if any selected tariff is Homeflex) -->
+      <div id="hfInputs" style="display:none; margin-top:1rem;">
+        <h3 style="margin:0 0 .5rem 0;">Homeflex TOU Consumption & Export</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem;">
-          <div class="card" style="padding:1rem;">
-            <h3 style="margin:.25rem 0 .75rem;">Peak</h3>
-            <label>Consumption (kWh)
-              <input id="hfConsPeak" type="number" min="0" step="0.1" value="0">
-            </label>
-            <label style="margin-top:.5rem;">Export (kWh)
-              <input id="hfExpPeak" type="number" min="0" step="0.1" value="0">
-            </label>
-          </div>
-          <div class="card" style="padding:1rem;">
-            <h3 style="margin:.25rem 0 .75rem;">Standard</h3>
-            <label>Consumption (kWh)
-              <input id="hfConsStd" type="number" min="0" step="0.1" value="0">
-            </label>
-            <label style="margin-top:.5rem;">Export (kWh)
-              <input id="hfExpStd" type="number" min="0" step="0.1" value="0">
-            </label>
-          </div>
-          <div class="card" style="padding:1rem;">
-            <h3 style="margin:.25rem 0 .75rem;">Off-peak</h3>
-            <label>Consumption (kWh)
-              <input id="hfConsOff" type="number" min="0" step="0.1" value="0">
-            </label>
-            <label style="margin-top:.5rem;">Export (kWh)
-              <input id="hfExpOff" type="number" min="0" step="0.1" value="0">
-            </label>
-          </div>
-        </div>
-
-        <!-- Billing days still apply -->
-        <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
-          <label>Billing days
-            <input id="hfDaysInput" type="number" min="1" max="31" step="0.001" value="30.437" style="width:160px;">
+          <label>Peak consumption (kWh)
+            <input id="hfConsPeak" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>Standard consumption (kWh)
+            <input id="hfConsStd" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>Off-peak consumption (kWh)
+            <input id="hfConsOff" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>Peak export (kWh)
+            <input id="hfExpPeak" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>Standard export (kWh)
+            <input id="hfExpStd" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>Off-peak export (kWh)
+            <input id="hfExpOff" type="number" min="0" step="0.1" value="0">
           </label>
         </div>
+        <p class="muted" style="margin-top:.5rem;">Rebate per TOU is capped at your consumption in that TOU (i.e., <em>rebated kWh</em> = <code>min(consumption, export)</code>).</p>
       </div>
-
-      <p class="muted" style="margin-top:.5rem;">We compare the estimated monthly bill from energy + fixed daily charges.</p>
     </section>
 
     <!-- Results -->
@@ -164,7 +146,7 @@
         <li>Select one or more categories (e.g., Homepower, Homeflex, Homelight).</li>
         <li>Tick up to five tariffs to compare.</li>
         <li>Toggle VAT if needed.</li>
-        <li>Enter your kWh and billing days (or TOU breakdown for Homeflex). Results update instantly.</li>
+        <li>Enter your kWh and billing days. If a Homeflex tariff is selected, also enter TOU consumption and exports.</li>
       </ol>
     </section>
   </main>
@@ -187,5 +169,7 @@
 
 </body>
 </html>
+
+
 
 
