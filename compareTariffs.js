@@ -1,7 +1,5 @@
 // compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
-// Single legend for all breakdown pies + safe labels in all charts
-// ✅ Updated: canonical component labels + fixed color map for consistent legends across all pies
-// ✅ Now includes Homeflex 1–4 with a sensible blended TOU active-energy rate (no HTML changes required)
+// Now includes Homeflex 1–4 with TOU Consumption & Export inputs, and per-TOU export rebate (min(cons, export))
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
@@ -45,7 +43,7 @@ function estimateTextWidth(text, fontSize = 12) {
   return Math.max(6, text.length * fontSize * 0.6);
 }
 
-/* ---------- Tariff data (keep in sync with spuTariffsmart.js) ---------- */
+/* ---------- Tariff data (keep in sync with other pages where applicable) ---------- */
 const tariffData = [
   { "Tariff": "Businessrate 1", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 20.34, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 1.98 },
   { "Tariff": "Businessrate 2", "Energy Charge [c/kWh]": 224.93, "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 14.54, "Network Capacity Charge [R/Pod/Day]": 30.21, "Service and Administration Charge [R/Pod/Day]": 14.70, "Electrification and Rural Network Subsidy Charge [c/kWh]": 4.94, "Generation Capacity Charge [R/Pod/Day]": 2.95 },
@@ -70,159 +68,64 @@ const tariffData = [
   { "Tariff": "Landlight 20A", "Energy Charge [c/kWh]": 603.54 },
   { "Tariff": "Landlight 60A", "Energy Charge [c/kWh]": 836 },
 
-  /* ✅ Added Municrate 1–4 (VAT-exclusive values; units per spec R/POD/day) */
+  /* Municrate 1–4 (VAT-exclusive values; units per spec R/POD/day) */
   { "Tariff": "Municrate 1", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 34.06, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 2.17 },
   { "Tariff": "Municrate 2", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 69.01, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 4.01 },
   { "Tariff": "Municrate 3", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 138.21, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 8.46 },
   { "Tariff": "Municrate 4", "Energy Charge [c/kWh]": 349.28, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": null, "Service and Administration Charge [R/POD/day]": null, "Generation Capacity Charge [R/POD/day]": null },
 
-  /* ✅ NEW: Homeflex variants (active energy is TOU-blended; other charges like demand/ancillary/fixed kept explicit) */
-  { "Tariff": "Homeflex 1", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 12.13, "Generation Capacity Charge [R/POD/day]": 0.72, "Service and Administration Charge [R/POD/day]": 3.27 },
-  { "Tariff": "Homeflex 2", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 27.07, "Generation Capacity Charge [R/POD/day]": 1.27, "Service and Administration Charge [R/POD/day]": 3.27 },
-  { "Tariff": "Homeflex 3", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 57.82, "Generation Capacity Charge [R/POD/day]": 3.10, "Service and Administration Charge [R/POD/day]": 3.27 },
-  { "Tariff": "Homeflex 4", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 8.35,  "Generation Capacity Charge [R/POD/day]": 0.47, "Service and Administration Charge [R/POD/day]": 3.27 }
+  /* NEW: Homeflex 1–4 (non-active energy elements mirror Homepower equivalents; active energy handled via TOU logic below) */
+  { "Tariff": "Homeflex 1", "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 26.37, "Network Capacity Charge [R/POD/day]": 12.13, "Generation Capacity Charge [R/POD/day]": 0.72, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 2", "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 26.37, "Network Capacity Charge [R/POD/day]": 27.07, "Generation Capacity Charge [R/POD/day]": 1.27, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 3", "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 26.37, "Network Capacity Charge [R/POD/day]": 57.82, "Generation Capacity Charge [R/POD/day]": 3.10, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 4", "Ancillary Service Charge [c/kWh]": 0.41, "Netword Demand Charge [c/kWh]": 26.37, "Network Capacity Charge [R/POD/day]": 8.35,  "Generation Capacity Charge [R/POD/day]": 0.47, "Service and Administration Charge [R/POD/day]": 3.27 }
 ];
 
-/* ---------- Homeflex TOU active-energy rates (VAT-exclusive, c/kWh) ---------- */
-/* Uses a fixed, sensible blend so no HTML changes are needed:
-   - Season weights: Low (Sep–May) = 9/12, High (Jun–Aug) = 3/12
-   - TOU mix: Peak 15%, Standard 45%, Off-peak 40%
-   You can tweak MIX_* below without touching the UI. */
-const HF_ENERGY = {
+/* ---------- Homeflex TOU rates (VAT-exclusive, c/kWh) ---------- */
+/* Purchase energy (Active Energy) — blended by season (Low 9/12, High 3/12) */
+const HF_PURCHASE = {
   high: { peak: 706.97, standard: 216.31, offpeak: 159.26 }, // Jun–Aug
   low:  { peak: 329.28, standard: 204.90, offpeak: 159.26 }  // Sep–May
 };
-const MIX_TOU = { peak: 0.15, standard: 0.45, offpeak: 0.40 };
-const MIX_SEASON = { low: 9/12, high: 3/12 };
+/* Gen-offset (rebate) rates — replace with your official values if they differ */
+const HF_REBATE = {
+  high: { peak: 350.00, standard: 160.00, offpeak: 120.00 },
+  low:  { peak: 250.00, standard: 150.00, offpeak: 120.00 }
+};
+/* Blend helper */
+const BLEND = (hi, lo) => (3/12)*hi + (9/12)*lo;
+const HF_BUY_BLEND = {
+  peak:    BLEND(HF_PURCHASE.high.peak,    HF_PURCHASE.low.peak),
+  standard:BLEND(HF_PURCHASE.high.standard,HF_PURCHASE.low.standard),
+  offpeak: BLEND(HF_PURCHASE.high.offpeak, HF_PURCHASE.low.offpeak)
+};
+const HF_REBATE_BLEND = {
+  peak:    BLEND(HF_REBATE.high.peak,    HF_REBATE.low.peak),
+  standard:BLEND(HF_REBATE.high.standard,HF_REBATE.low.standard),
+  offpeak: BLEND(HF_REBATE.high.offpeak, HF_REBATE.low.offpeak)
+};
 
 /* ---------- helpers ---------- */
 const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
 const isEnergyKey = (k) => keyUnit(k) === "c/kWh";
-/* ✅ Accept both historical [R/Pod/Day] and new [R/POD/day] spellings */
 function isFixedKey(k){
   const u = keyUnit(k).toLowerCase();
   return u === "r/pod/day";
 }
-const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
 const catOf = (tName) => tName.split(" ")[0];
 const isHomeflexTariff = (name) => /^Homeflex\s[1-4]$/.test(name);
 
-/* Compute a single blended Active Energy (c/kWh) for Homeflex */
-function homeflexActiveEnergyCentsBlended(){
-  const touBlend = (season) =>
-    MIX_TOU.peak    * HF_ENERGY[season].peak +
-    MIX_TOU.standard* HF_ENERGY[season].standard +
-    MIX_TOU.offpeak * HF_ENERGY[season].offpeak;
-
-  return MIX_SEASON.low * touBlend('low') + MIX_SEASON.high * touBlend('high');
-}
-
-function energyCentsPerKwhTotal(t) {
-  if (isHomeflexTariff(t.Tariff)) {
-    // Synthetic Active Energy from TOU blend + any other energy-linked components present on the row
-    let other = 0;
-    for (const k of Object.keys(t)) {
-      if (isEnergyKey(k)) other += (t[k] || 0);
-    }
-    return homeflexActiveEnergyCentsBlended() + other;
-  }
-  return Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0);
-}
-function fixedRandsPerDayTotal(t) {
-  return Object.keys(t).reduce((acc, k) => acc + (isFixedKey(k) ? (t[k] || 0) : 0), 0);
-}
-function calcBill(t, kwh, days, vatIncl) {
-  const energyR_excl = (energyCentsPerKwhTotal(t) / 100) * kwh;
-  const fixedR_excl  = fixedRandsPerDayTotal(t) * days;
-  const sub_excl = energyR_excl + fixedR_excl;
-  const total = vatIncl ? sub_excl * (1 + VAT_RATE) : sub_excl;
-  const vat   = vatIncl ? sub_excl * VAT_RATE : 0;
-  return { energyR_excl, fixedR_excl, sub_excl, vat, total };
-}
-function money(v){ return `R ${v.toFixed(2)}`; }
-function cents(v){ return `${v.toFixed(2)} c/kWh`; }
-function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
-
-/* Detailed components (support both “Network” and historic “Netword” spellings) */
-const ENERGY_COMPONENT_KEYS = [
-  "Energy Charge [c/kWh]",
-  "Ancillary Service Charge [c/kWh]",
-  "Network Demand Charge [c/kWh]",
-  "Netword Demand Charge [c/kWh]",
-  "Electrification and Rural Network Subsidy Charge [c/kWh]"
-];
-const FIXED_COMPONENT_KEYS = [
-  "Network Capacity Charge [R/Pod/Day]",
-  "Network Capacity Charge [R/POD/day]",
-  "Generation Capacity Charge [R/Pod/Day]",
-  "Generation Capacity Charge [R/POD/day]",
-  "Service and Administration Charge [R/Pod/Day]",
-  "Service and Administration Charge [R/POD/day]"
-];
-
-/* Strip either fixed-unit variant from labels */
-function stripUnits(lbl){
-  return lbl.replace(' [c/kWh]','')
-            .replace(' [R/Pod/Day]','')
-            .replace(' [R/POD/day]','');
-}
-
-/* ---------- Canonical component labels & fixed colors (legend consistency) ---------- */
-const CANON = [
-  { label: 'Active energy',            match: ['Energy Charge'] },
-  { label: 'Ancillary service',        match: ['Ancillary Service Charge'] },
-  { label: 'Network demand',           match: ['Network Demand Charge', 'Netword Demand Charge'] }, // unify spellings
-  { label: 'Electrification subsidy',  match: ['Electrification and Rural Network Subsidy Charge'] },
-  { label: 'Network capacity',         match: ['Network Capacity Charge'] },
-  { label: 'Generation capacity',      match: ['Generation Capacity Charge'] },
-  { label: 'Service & admin',          match: ['Service and Administration Charge'] },
-];
-
-const CANON_ORDER = CANON.map(c => c.label).concat(['VAT']);
-const COLOR_MAP = Object.fromEntries(
-  CANON_ORDER.map((lbl, i) => [lbl, THEME.pieColors[i % THEME.pieColors.length]])
-);
-// Ensure VAT is grey (not blue)
-COLOR_MAP['VAT'] = VAT_COLOR;
-
-/* Strip units then map to canonical label */
-function canonicalizeLabel(rawKeyOrLabel){
-  const base = String(rawKeyOrLabel).replace(/\s*\[.*?\]\s*/,''); // remove [units]
-  for (const c of CANON) {
-    if (c.match.some(m => base.toLowerCase().startsWith(m.toLowerCase()))) return c.label;
-  }
-  return stripUnits(base); // fallback
-}
-
-/* Build component list in Rands using canonical labels */
-function componentBreakdownRand(t, kwh, days) {
-  const items = [];
-
-  if (isHomeflexTariff(t.Tariff)) {
-    // Add synthetic Active Energy from TOU blend
-    items.push({ label: 'Active energy', amountR: (homeflexActiveEnergyCentsBlended()/100) * kwh, kind:'energy' });
-    // And include other energy-linked components if present (ancillary, network demand, legacy, etc.)
-    ["Energy Charge [c/kWh]","Ancillary Service Charge [c/kWh]","Network Demand Charge [c/kWh]","Netword Demand Charge [c/kWh]","Electrification and Rural Network Subsidy Charge [c/kWh]","Legacy Charge [c/kWh]"]
-      .forEach(k => { if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' }); });
-  } else {
-    for (const k of ENERGY_COMPONENT_KEYS) {
-      if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
-    }
-  }
-
-  for (const k of FIXED_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0) * days, kind:'fixed' });
-  }
-  return items;
-}
-
-/* ---------- state ---------- */
+/* State (includes Homeflex TOU inputs) */
 const state = {
-  categories: new Set(["Homepower", "Homelight", "Homeflex"]), // ✅ include Homeflex without changing HTML
+  categories: new Set(["Homepower", "Homelight", "Homeflex"]),
   selected: [],
   vatInclusive: true,
   kwh: 500,
   days: 30.437,
+  hf: {
+    cons: { peak: 0, standard: 0, offpeak: 0 },
+    exp:  { peak: 0, standard: 0, offpeak: 0 }
+  },
   breakdownOpen: false
 };
 
@@ -244,6 +147,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   dom.kwhInput    = q("kwhInput");
   dom.daysInput   = q("daysInput");
+
+  dom.hfInputs    = q("hfInputs");
+  dom.hfConsPeak  = q("hfConsPeak");
+  dom.hfConsStd   = q("hfConsStd");
+  dom.hfConsOff   = q("hfConsOff");
+  dom.hfExpPeak   = q("hfExpPeak");
+  dom.hfExpStd    = q("hfExpStd");
+  dom.hfExpOff    = q("hfExpOff");
 
   dom.billChart   = q("billChart");
   dom.splitChart  = q("splitChart");
@@ -273,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAll();
   });
 
-  // Bill inputs
+  // Generic bill inputs
   dom.kwhInput.addEventListener("input", () => {
     state.kwh = Math.max(0, Number(dom.kwhInput.value) || 0);
     renderAll();
@@ -286,6 +197,22 @@ document.addEventListener("DOMContentLoaded", () => {
     state.days = d;
     renderAll();
   });
+
+  // Homeflex TOU inputs
+  const hfWire = (el, path) => {
+    el.addEventListener('input', () => {
+      const v = Math.max(0, Number(el.value) || 0);
+      const [grp, key] = path; // ['cons','peak'] or ['exp','standard'] etc
+      state.hf[grp][key] = v;
+      renderAll();
+    });
+  };
+  hfWire(dom.hfConsPeak, ['cons','peak']);
+  hfWire(dom.hfConsStd,  ['cons','standard']);
+  hfWire(dom.hfConsOff,  ['cons','offpeak']);
+  hfWire(dom.hfExpPeak,  ['exp','peak']);
+  hfWire(dom.hfExpStd,   ['exp','standard']);
+  hfWire(dom.hfExpOff,   ['exp','offpeak']);
 
   // Clear selection
   dom.clearSelBtn.addEventListener("click", () => {
@@ -362,7 +289,7 @@ function injectBreakdownUI(){
   dom.piesLegend = card.querySelector('#piesLegend');
 }
 
-/* ---------- options & selection ---------- */
+/* ---------- option rendering & selection ---------- */
 function renderOptions() {
   dom.options.innerHTML = "";
   const cats = state.categories;
@@ -403,10 +330,17 @@ function onSelectChange(cb) {
     state.selected = state.selected.filter(n => n !== name);
   }
   updateSelCounter();
+  toggleHomeflexInputs();
   renderAll();
 }
 function updateSelCounter() {
   dom.selCounter.textContent = `${state.selected.length}/${MAX_SELECT} selected`;
+}
+function anyHomeflexSelected(){
+  return state.selected.some(n => isHomeflexTariff(n));
+}
+function toggleHomeflexInputs(){
+  dom.hfInputs.style.display = anyHomeflexSelected() ? '' : 'none';
 }
 function autoPreselect(n) {
   const cbs = dom.options.querySelectorAll("input[type=checkbox]");
@@ -419,9 +353,114 @@ function autoPreselect(n) {
     }
   }
   updateSelCounter();
+  toggleHomeflexInputs();
 }
 
-/* ---------- results ---------- */
+/* ---------- calculations ---------- */
+function energyCentsPerKwhTotal(t) {
+  // For the Component table (rates view), show summed c/kWh of rate components (excludes export rebate)
+  return Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0)
+       + (isHomeflexTariff(t.Tariff) ? (HF_BUY_BLEND.peak + HF_BUY_BLEND.standard + HF_BUY_BLEND.offpeak) / 3 : 0); // simple representation
+}
+function fixedRandsPerDayTotal(t) {
+  return Object.keys(t).reduce((acc, k) => acc + (isFixedKey(k) ? (t[k] || 0) : 0), 0);
+}
+
+/* Homeflex active energy (R, excl VAT) using TOU consumption & export rebate */
+function homeflexActiveEnergyRand() {
+  const c = state.hf.cons, e = state.hf.exp;
+  const buy =
+    (c.peak    * HF_BUY_BLEND.peak +
+     c.standard* HF_BUY_BLEND.standard +
+     c.offpeak * HF_BUY_BLEND.offpeak) / 100;
+  const rebateKwh = {
+    peak:    Math.min(c.peak,    e.peak),
+    standard:Math.min(c.standard,e.standard),
+    offpeak: Math.min(c.offpeak, e.offpeak)
+  };
+  const rebate =
+    (rebateKwh.peak    * HF_REBATE_BLEND.peak +
+     rebateKwh.standard* HF_REBATE_BLEND.standard +
+     rebateKwh.offpeak * HF_REBATE_BLEND.offpeak) / 100;
+
+  // Active energy can't go below zero from rebate
+  return Math.max(0, buy - rebate);
+}
+
+/* Build component list in Rands using canonical labels (with Homeflex active energy net of rebate) */
+const ENERGY_COMPONENT_KEYS = [
+  "Energy Charge [c/kWh]",
+  "Ancillary Service Charge [c/kWh]",
+  "Network Demand Charge [c/kWh]",
+  "Netword Demand Charge [c/kWh]",
+  "Electrification and Rural Network Subsidy Charge [c/kWh]"
+];
+const FIXED_COMPONENT_KEYS = [
+  "Network Capacity Charge [R/Pod/Day]",
+  "Network Capacity Charge [R/POD/day]",
+  "Generation Capacity Charge [R/Pod/Day]",
+  "Generation Capacity Charge [R/POD/day]",
+  "Service and Administration Charge [R/Pod/Day]",
+  "Service and Administration Charge [R/POD/day]"
+];
+function canonicalizeLabel(raw){
+  const base = String(raw).replace(/\s*\[.*?\]\s*/,'');
+  if (base.toLowerCase().startsWith('energy charge')) return 'Active energy';
+  if (base.toLowerCase().startsWith('ancillary service')) return 'Ancillary service';
+  if (base.toLowerCase().startsWith('network demand') || base.toLowerCase().startsWith('netword demand')) return 'Network demand';
+  if (base.toLowerCase().startsWith('electrification and rural network subsidy')) return 'Electrification subsidy';
+  if (base.toLowerCase().startsWith('network capacity')) return 'Network capacity';
+  if (base.toLowerCase().startsWith('generation capacity')) return 'Generation capacity';
+  if (base.toLowerCase().startsWith('service and administration')) return 'Service & admin';
+  return base;
+}
+
+function componentBreakdownRand(t, kwhForNonActive, days) {
+  const items = [];
+  if (isHomeflexTariff(t.Tariff)) {
+    // Active energy (net of rebate) from TOU inputs
+    items.push({ label: 'Active energy', amountR: homeflexActiveEnergyRand(), kind:'energy' });
+    // Other energy components (apply to total consumption volume = sum of TOU consumption)
+    const kwhTotal = state.hf.cons.peak + state.hf.cons.standard + state.hf.cons.offpeak;
+    ["Ancillary Service Charge [c/kWh]","Network Demand Charge [c/kWh]","Netword Demand Charge [c/kWh]","Electrification and Rural Network Subsidy Charge [c/kWh]"]
+      .forEach(k => { if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwhTotal, kind:'energy' }); });
+  } else {
+    // Non-Homeflex: energy components apply to generic kWh input
+    for (const k of ENERGY_COMPONENT_KEYS) {
+      if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwhForNonActive, kind:'energy' });
+    }
+  }
+  for (const k of FIXED_COMPONENT_KEYS) {
+    if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0) * days, kind:'fixed' });
+  }
+  return items;
+}
+
+function calcBill(t, kwhGeneric, days, vatIncl) {
+  let energyR_excl = 0;
+  if (isHomeflexTariff(t.Tariff)) {
+    const kwhTotal = state.hf.cons.peak + state.hf.cons.standard + state.hf.cons.offpeak;
+    const activeR = homeflexActiveEnergyRand(); // already R
+    // Other energy-based components on total kWh
+    const otherEnergyCents = ["Ancillary Service Charge [c/kWh]","Network Demand Charge [c/kWh]","Netword Demand Charge [c/kWh]","Electrification and Rural Network Subsidy Charge [c/kWh]"]
+      .reduce((a,k) => a + (t[k]||0), 0);
+    energyR_excl = activeR + (otherEnergyCents/100) * kwhTotal;
+  } else {
+    const energyCents = Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0);
+    energyR_excl = (energyCents / 100) * kwhGeneric;
+  }
+
+  const fixedR_excl  = fixedRandsPerDayTotal(t) * days;
+  const sub_excl = energyR_excl + fixedR_excl;
+  const vat   = vatIncl ? sub_excl * VAT_RATE : 0;
+  const total = vatIncl ? sub_excl + vat : sub_excl;
+  return { energyR_excl, fixedR_excl, sub_excl, vat, total };
+}
+function money(v){ return `R ${v.toFixed(2)}`; }
+function cents(v){ return `${v.toFixed(2)} c/kWh`; }
+function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
+
+/* ---------- charts & tables ---------- */
 function renderAll() {
   const items = state.selected
     .map(name => tariffData.find(t => t.Tariff === name))
@@ -490,7 +529,7 @@ function polarToCartesian(cx, cy, r, angleRad){
   return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
 
-/* Horizontal bar chart with smart label placement */
+/* Horizontal bar chart */
 function drawBarChart(container, labels, values, { unit = "" } = {}) {
   container.innerHTML = "";
   const w = container.clientWidth || 680;
@@ -517,13 +556,11 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
     const valW = estimateTextWidth(valueStr, fontSize);
     const insidePadding = 10;
 
-    // Name
     if (barW > labW + insidePadding * 2) {
       svg.appendChild(text(pad + insidePadding, y + rowH*0.5, lab, { anchor: "start", size: fontSize, color: txtOnBar }));
     } else {
       svg.appendChild(text(pad - 6, y + rowH*0.5, lab, { anchor: "end", size: fontSize, color: "white" }));
     }
-    // Value
     if (barW > valW + insidePadding * 2) {
       svg.appendChild(text(pad + barW - insidePadding, y + rowH*0.5, valueStr, { anchor: "end", size: fontSize, color: txtOnBar }));
     } else {
@@ -534,7 +571,7 @@ function drawBarChart(container, labels, values, { unit = "" } = {}) {
   container.appendChild(svg);
 }
 
-/* 100% stacked split (energy vs fixed) — label always visible */
+/* 100% stacked split (energy vs fixed) */
 function drawStackedPctChart(container, labels, pairs) {
   container.innerHTML = "";
   const w = container.clientWidth || 680;
@@ -550,80 +587,17 @@ function drawStackedPctChart(container, labels, pairs) {
     const eW = (w - pad*2) * (e / 100);
     const fW = (w - pad*2) - eW;
 
-    // subtle track to improve readability
     svg.appendChild(rect(pad, y + rowH*0.2, w - pad*2, rowH*0.6, THEME.surface3));
     svg.appendChild(rect(pad, y + rowH*0.2, eW, rowH*0.6, THEME.energy));
     svg.appendChild(rect(pad + eW, y + rowH*0.2, fW, rowH*0.6, THEME.fixed));
 
-    // Name inside the track at the very left → never clipped
     svg.appendChild(text(pad + 8, y + rowH*0.5, `${lab}`, { anchor: "start", size: 12, color: THEME.ink }));
-    // Percentages on the right
     svg.appendChild(text(w - 8, y + rowH*0.5, `${e.toFixed(0)}% / ${f.toFixed(0)}%`, { anchor: "end", size: 12, color: THEME.ink }));
   });
 
   container.appendChild(svg);
 }
 
-/* Donut pie (no legend here; legend is global) */
-function drawDonut(container, title, items) {
-  const w = 260, h = 260, cx = w/2, cy = h/2 - 6, r = 92, inner = 54;
-  const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
-  let angle = -Math.PI/2;
-
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", w);
-  svg.setAttribute("height", h);
-  svg.style.display = 'block';
-  svg.style.margin = 'auto';
-
-  items.forEach(it => {
-    if (!it.value) return;
-    const frac = it.value / sum;
-    const end = angle + frac * Math.PI * 2;
-    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
-    const tip = svgEl("title", {});
-    tip.textContent = `${it.label}: ${money(it.value)}`;
-    path.appendChild(tip);
-    svg.appendChild(path);
-    angle = end;
-  });
-
-  // Center total
-  svg.appendChild(text(cx, cy, money(sum), { anchor: "middle", size: 12, color: THEME.ink }));
-  // Title
-  svg.appendChild(text(cx, h-14, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
-
-  container.appendChild(svg);
-}
-
-/* Build a single legend covering all pies */
-function renderGlobalLegend(container, labelsOrdered, colorMap) {
-  container.innerHTML = "";
-  const legend = document.createElement('div');
-  legend.style.display = 'grid';
-  legend.style.gridTemplateColumns = 'repeat(auto-fit, minmax(220px, 1fr))';
-  legend.style.gap = '.45rem .9rem';
-
-  labelsOrdered.forEach(lbl => {
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.gap = '.5rem';
-    const sw = document.createElement('span');
-    sw.style.width = '14px'; sw.style.height = '14px';
-    sw.style.borderRadius = '3px'; sw.style.background = colorMap[lbl];
-    const txt = document.createElement('span');
-    txt.style.fontSize = '.95rem';
-    txt.style.color = THEME.inkMuted;
-    txt.textContent = lbl;
-    row.appendChild(sw); row.appendChild(txt);
-    legend.appendChild(row);
-  });
-
-  container.appendChild(legend);
-}
-
-/* ---------- chart renders ---------- */
 function renderBillChart(items) {
   const labels = items.map(t => t.Tariff);
   const totals = items.map(t => calcBill(t, state.kwh, state.days, state.vatInclusive).total);
@@ -652,24 +626,21 @@ function renderBreakdown(){
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  // Track which canonical labels actually appear (for a concise legend)
   const seen = new Set();
-
-  // Helper: get amount by canonical label from comps[]
   const amountByCanon = (comps, canonLabel) => {
     const hit = comps.find(c => c.label === canonLabel);
     return hit ? money(hit.amountR) : '—';
-    };
+  };
 
   selectedTariffs.forEach((t) => {
-    const comps = componentBreakdownRand(t, state.kwh, state.days);
+    const kwhGeneric = state.kwh;
+    const comps = componentBreakdownRand(t, kwhGeneric, state.days);
     const energyTotal = comps.filter(c => c.kind==='energy').reduce((a,c)=>a+c.amountR,0);
     const fixedTotal  = comps.filter(c => c.kind==='fixed').reduce((a,c)=>a+c.amountR,0);
     const sub_excl = energyTotal + fixedTotal;
     const vat = state.vatInclusive ? sub_excl * VAT_RATE : 0;
     const total = state.vatInclusive ? sub_excl + vat : sub_excl;
 
-    // Table row
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${t.Tariff}</td>
@@ -687,32 +658,27 @@ function renderBreakdown(){
     `;
     dom.breakdownTableBody.appendChild(tr);
 
-    // Per-tariff donut (canonical labels + fixed colors)
+    // Build donut items (no negative slices; active energy already net of rebate)
     const pieBox = document.createElement('div');
     const items = [];
 
-    ENERGY_COMPONENT_KEYS.concat(["Legacy Charge [c/kWh]"]).forEach(k => {
-      if (t[k] != null) {
-        const lbl = canonicalizeLabel(k);
-        items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: COLOR_MAP[lbl] });
-        seen.add(lbl);
-      }
-    });
-    // Add synthetic Active energy slice for Homeflex pies
-    if (isHomeflexTariff(t.Tariff)) {
-      items.push({ label: 'Active energy', value: (homeflexActiveEnergyCentsBlended()/100)*state.kwh, color: COLOR_MAP['Active energy'] });
-      seen.add('Active energy');
-    }
-
-    FIXED_COMPONENT_KEYS.forEach(k => {
-      if (t[k] != null) {
-        const lbl = canonicalizeLabel(k);
-        items.push({ label: lbl, value: (t[k]||0)*state.days, color: COLOR_MAP[lbl] });
-        seen.add(lbl);
+    comps.forEach(c => {
+      const colorMap = {
+        'Active energy': THEME.pieColors[0],
+        'Ancillary service': THEME.pieColors[1],
+        'Network demand': THEME.pieColors[2],
+        'Electrification subsidy': THEME.pieColors[3],
+        'Network capacity': THEME.pieColors[4],
+        'Generation capacity': THEME.pieColors[5],
+        'Service & admin': THEME.pieColors[6]
+      };
+      if (c.amountR > 0) {
+        items.push({ label: c.label, value: c.amountR, color: colorMap[c.label] || THEME.pieColors[0] });
+        seen.add(c.label);
       }
     });
     if (state.vatInclusive) {
-      items.push({ label: 'VAT', value: (energyTotal+fixedTotal)*VAT_RATE, color: COLOR_MAP['VAT'] });
+      items.push({ label: 'VAT', value: sub_excl * VAT_RATE, color: VAT_COLOR });
       seen.add('VAT');
     }
 
@@ -720,10 +686,69 @@ function renderBreakdown(){
     dom.piesRow.appendChild(pieBox);
   });
 
-  // Render ONE legend with fixed order/colors, showing only labels that appear
-  const legendLabels = CANON_ORDER.filter(lbl => seen.has(lbl));
-  renderGlobalLegend(dom.piesLegend, legendLabels, COLOR_MAP);
+  // Legend (labels encountered)
+  dom.piesLegend.innerHTML = "";
+  const legend = document.createElement('div');
+  legend.style.display = 'grid';
+  legend.style.gridTemplateColumns = 'repeat(auto-fit, minmax(220px, 1fr))';
+  legend.style.gap = '.45rem .9rem';
+  Array.from(seen).forEach(lbl => {
+    const row = document.createElement('div');
+    row.style.display = 'flex'; row.style.alignItems = 'center'; row.style.gap = '.5rem';
+    const sw = document.createElement('span');
+    sw.style.width='14px'; sw.style.height='14px'; sw.style.borderRadius='3px';
+    const colorMap = {
+      'Active energy': THEME.pieColors[0],
+      'Ancillary service': THEME.pieColors[1],
+      'Network demand': THEME.pieColors[2],
+      'Electrification subsidy': THEME.pieColors[3],
+      'Network capacity': THEME.pieColors[4],
+      'Generation capacity': THEME.pieColors[5],
+      'Service & admin': THEME.pieColors[6],
+      'VAT': VAT_COLOR
+    };
+    sw.style.background = colorMap[lbl] || THEME.pieColors[0];
+    const txt = document.createElement('span');
+    txt.style.fontSize = '.95rem';
+    txt.style.color = THEME.inkMuted;
+    txt.textContent = lbl;
+    row.appendChild(sw); row.appendChild(txt);
+    legend.appendChild(row);
+  });
+  dom.piesLegend.appendChild(legend);
 }
 
+/* ---------- Donut helpers ---------- */
+function drawDonut(container, title, items) {
+  const w = 260, h = 260, cx = w/2, cy = h/2 - 6, r = 92, inner = 54;
+  const sum = items.reduce((a,c)=>a+(c.value||0),0) || 1;
+  let angle = -Math.PI/2;
 
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.style.display = 'block';
+  svg.style.margin = 'auto';
 
+  items.forEach(it => {
+    if (!it.value) return;
+    const frac = it.value / sum;
+    const end = angle + frac * Math.PI * 2;
+    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
+    const tip = svgEl("title", {});
+    tip.textContent = `${it.label}: ${money(it.value)}`;
+    path.appendChild(tip);
+    svg.appendChild(path);
+    angle = end;
+  });
+
+  svg.appendChild(text(cx, cy, money(sum), { anchor: "middle", size: 12, color: THEME.ink }));
+  svg.appendChild(text(cx, h-14, title, { anchor: "middle", size: 12, color: THEME.inkMuted }));
+
+  container.appendChild(svg);
+}
+
+/* ---------- small utils ---------- */
+function polarToCartesian(cx, cy, r, angleRad){
+  return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
+}
