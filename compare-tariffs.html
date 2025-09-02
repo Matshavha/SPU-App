@@ -30,16 +30,40 @@
       <div id="categoryGroup" style="display:flex;flex-wrap:wrap;gap:.5rem;">
         <label class="option-tile"><input type="checkbox" class="cat" value="Businessrate"> <span>Businessrate</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Homepower"   checked> <span>Homepower</span></label>
+        <!-- ✅ New: Homeflex category -->
+        <label class="option-tile"><input type="checkbox" class="cat" value="Homeflex"   checked> <span>Homeflex</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Landrate"> <span>Landrate</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Homelight"   checked> <span>Homelight</span></label>
         <label class="option-tile"><input type="checkbox" class="cat" value="Landlight"> <span>Landlight</span></label>
+        <!-- ✅ Added Municrate category -->
         <label class="option-tile"><input type="checkbox" class="cat" value="Municrate"> <span>Municrate</span></label>
-        <!-- ✅ NEW -->
-        <label class="option-tile"><input type="checkbox" class="cat" value="Homeflex"> <span>Homeflex</span></label>
       </div>
+      <!-- ✅ Keep helper text, but the JS no longer switches it to “Tick up to five…”. -->
       <p id="catHint" class="muted" style="margin:.5rem 0 0;">Tick categories to see available tariffs below.</p>
     </section>
-    
+
+    <!-- Step 2: Tariff selection (up to 5) -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 2 — Select up to 5 tariffs to compare</h2>
+      <div id="tariffOptions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.5rem;"></div>
+      <div style="margin-top:.5rem;display:flex;gap:.75rem;align-items:center;">
+        <span id="selCounter" class="muted">0/5 selected</span>
+        <span id="selWarning" class="muted" style="color:#b00;display:none;">You can select at most 5.</span>
+        <button id="clearSelBtn" class="btn-ghost" type="button" style="margin-left:auto;">Clear selection</button>
+      </div>
+    </section>
+
+    <!-- Step 3: VAT -->
+    <section class="card" style="margin-bottom:1rem;">
+      <h2>Step 3 — VAT mode</h2>
+      <label class="switch" title="Toggle VAT inclusive/exclusive">
+        <input type="checkbox" id="vatToggle" checked />
+        <span class="slider"></span>
+      </label>
+      <span id="vatModeLabel">VAT: Inclusive</span>
+      <p class="muted" style="margin-top:.5rem;">All values update instantly when you toggle VAT.</p>
+    </section>
+
     <!-- Step 4: Bill inputs -->
     <section class="card" style="margin-bottom:1rem;">
       <h2>Step 4 — Bill inputs</h2>
@@ -52,29 +76,6 @@
         </label>
       </div>
       <p class="muted" style="margin-top:.5rem;">We compare the estimated monthly bill from energy + fixed daily charges.</p>
-    
-      <!-- ✅ NEW: Homeflex assumptions (auto-shown only if any Homeflex is selected) -->
-      <div id="homeflexPanel" class="note" style="display:none;margin-top:.75rem;">
-        <strong>Homeflex assumptions</strong> — Used to blend TOU energy into one comparable rate.
-        <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.5rem;">
-          <label>Season
-            <select id="hfSeason" style="width:160px;">
-              <option value="low" selected>Low (Sep–May)</option>
-              <option value="high">High (Jun–Aug)</option>
-            </select>
-          </label>
-          <label>Peak %
-            <input id="hfPeakPct" type="number" min="0" max="100" step="1" value="15" style="width:120px;">
-          </label>
-          <label>Standard %
-            <input id="hfStdPct" type="number" min="0" max="100" step="1" value="45" style="width:120px;">
-          </label>
-          <label>Off-peak %
-            <input id="hfOffPct" type="number" min="0" max="100" step="1" value="40" style="width:120px;">
-          </label>
-        </div>
-        <p class="muted" style="margin-top:.25rem;">Percentages are normalized if they don’t sum to 100%. Gen-offset credits are not applied on this compare view.</p>
-      </div>
     </section>
 
     <!-- Results -->
@@ -115,7 +116,7 @@
     <section id="usageTips" class="muted" style="margin-top:1rem;">
       <strong>How to use:</strong>
       <ol style="margin:.5rem 0 0 1rem;">
-        <li>Select one or more categories (e.g., Homepower + Homelight).</li>
+        <li>Select one or more categories (e.g., Homepower, Homeflex, Homelight).</li>
         <li>Tick up to five tariffs to compare.</li>
         <li>Toggle VAT if needed.</li>
         <li>Enter your kWh and billing days. Results update instantly.</li>
@@ -141,9 +142,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
