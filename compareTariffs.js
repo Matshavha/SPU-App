@@ -776,5 +776,3 @@ function drawDonut(container, title, items) {
 function polarToCartesian(cx, cy, r, angleRad){
   return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
-
-
