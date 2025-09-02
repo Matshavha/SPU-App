@@ -1,6 +1,7 @@
 // compareTariffs.js — theme-aware charts, VAT toggle, up to 5 tariffs
 // Single legend for all breakdown pies + safe labels in all charts
 // ✅ Updated: canonical component labels + fixed color map for consistent legends across all pies
+// ✅ Now includes Homeflex 1–4 with a sensible blended TOU active-energy rate (no HTML changes required)
 
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
@@ -73,8 +74,26 @@ const tariffData = [
   { "Tariff": "Municrate 1", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 34.06, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 2.17 },
   { "Tariff": "Municrate 2", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 69.01, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 4.01 },
   { "Tariff": "Municrate 3", "Energy Charge [c/kWh]": 229.79, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": 138.21, "Service and Administration Charge [R/POD/day]": 18.81, "Generation Capacity Charge [R/POD/day]": 8.46 },
-  { "Tariff": "Municrate 4", "Energy Charge [c/kWh]": 349.28, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": null, "Service and Administration Charge [R/POD/day]": null, "Generation Capacity Charge [R/POD/day]": null }
+  { "Tariff": "Municrate 4", "Energy Charge [c/kWh]": 349.28, "Ancillary Service Charge [c/kWh]": 0.41, "Network Demand Charge [c/kWh]": 43.60, "Network Capacity Charge [R/POD/day]": null, "Service and Administration Charge [R/POD/day]": null, "Generation Capacity Charge [R/POD/day]": null },
+
+  /* ✅ NEW: Homeflex variants (active energy is TOU-blended; other charges like demand/ancillary/fixed kept explicit) */
+  { "Tariff": "Homeflex 1", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 12.13, "Generation Capacity Charge [R/POD/day]": 0.72, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 2", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 27.07, "Generation Capacity Charge [R/POD/day]": 1.27, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 3", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 57.82, "Generation Capacity Charge [R/POD/day]": 3.10, "Service and Administration Charge [R/POD/day]": 3.27 },
+  { "Tariff": "Homeflex 4", "Legacy Charge [c/kWh]": 22.78, "Network Demand Charge [c/kWh]": 26.37, "Ancillary Service Charge [c/kWh]": 0.41, "Network Capacity Charge [R/POD/day]": 8.35,  "Generation Capacity Charge [R/POD/day]": 0.47, "Service and Administration Charge [R/POD/day]": 3.27 }
 ];
+
+/* ---------- Homeflex TOU active-energy rates (VAT-exclusive, c/kWh) ---------- */
+/* Uses a fixed, sensible blend so no HTML changes are needed:
+   - Season weights: Low (Sep–May) = 9/12, High (Jun–Aug) = 3/12
+   - TOU mix: Peak 15%, Standard 45%, Off-peak 40%
+   You can tweak MIX_* below without touching the UI. */
+const HF_ENERGY = {
+  high: { peak: 706.97, standard: 216.31, offpeak: 159.26 }, // Jun–Aug
+  low:  { peak: 329.28, standard: 204.90, offpeak: 159.26 }  // Sep–May
+};
+const MIX_TOU = { peak: 0.15, standard: 0.45, offpeak: 0.40 };
+const MIX_SEASON = { low: 9/12, high: 3/12 };
 
 /* ---------- helpers ---------- */
 const keyUnit = (k) => (k.match(/\[(.*?)\]/)?.[1] || "");
@@ -86,8 +105,27 @@ function isFixedKey(k){
 }
 const withVat = (v, incl) => (v == null ? 0 : (incl ? v * (1 + VAT_RATE) : v));
 const catOf = (tName) => tName.split(" ")[0];
+const isHomeflexTariff = (name) => /^Homeflex\s[1-4]$/.test(name);
+
+/* Compute a single blended Active Energy (c/kWh) for Homeflex */
+function homeflexActiveEnergyCentsBlended(){
+  const touBlend = (season) =>
+    MIX_TOU.peak    * HF_ENERGY[season].peak +
+    MIX_TOU.standard* HF_ENERGY[season].standard +
+    MIX_TOU.offpeak * HF_ENERGY[season].offpeak;
+
+  return MIX_SEASON.low * touBlend('low') + MIX_SEASON.high * touBlend('high');
+}
 
 function energyCentsPerKwhTotal(t) {
+  if (isHomeflexTariff(t.Tariff)) {
+    // Synthetic Active Energy from TOU blend + any other energy-linked components present on the row
+    let other = 0;
+    for (const k of Object.keys(t)) {
+      if (isEnergyKey(k)) other += (t[k] || 0);
+    }
+    return homeflexActiveEnergyCentsBlended() + other;
+  }
   return Object.keys(t).reduce((acc, k) => acc + (isEnergyKey(k) ? (t[k] || 0) : 0), 0);
 }
 function fixedRandsPerDayTotal(t) {
@@ -159,9 +197,19 @@ function canonicalizeLabel(rawKeyOrLabel){
 /* Build component list in Rands using canonical labels */
 function componentBreakdownRand(t, kwh, days) {
   const items = [];
-  for (const k of ENERGY_COMPONENT_KEYS) {
-    if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
+
+  if (isHomeflexTariff(t.Tariff)) {
+    // Add synthetic Active Energy from TOU blend
+    items.push({ label: 'Active energy', amountR: (homeflexActiveEnergyCentsBlended()/100) * kwh, kind:'energy' });
+    // And include other energy-linked components if present (ancillary, network demand, legacy, etc.)
+    ["Energy Charge [c/kWh]","Ancillary Service Charge [c/kWh]","Network Demand Charge [c/kWh]","Netword Demand Charge [c/kWh]","Electrification and Rural Network Subsidy Charge [c/kWh]","Legacy Charge [c/kWh]"]
+      .forEach(k => { if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' }); });
+  } else {
+    for (const k of ENERGY_COMPONENT_KEYS) {
+      if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0)/100 * kwh, kind:'energy' });
+    }
   }
+
   for (const k of FIXED_COMPONENT_KEYS) {
     if (t[k] != null) items.push({ label: canonicalizeLabel(k), amountR: (t[k]||0) * days, kind:'fixed' });
   }
@@ -170,7 +218,7 @@ function componentBreakdownRand(t, kwh, days) {
 
 /* ---------- state ---------- */
 const state = {
-  categories: new Set(["Homepower", "Homelight"]), // defaults
+  categories: new Set(["Homepower", "Homelight", "Homeflex"]), // ✅ include Homeflex without changing HTML
   selected: [],
   vatInclusive: true,
   kwh: 500,
@@ -230,14 +278,14 @@ document.addEventListener("DOMContentLoaded", () => {
     state.kwh = Math.max(0, Number(dom.kwhInput.value) || 0);
     renderAll();
   });
-dom.daysInput.addEventListener("input", () => {
-  let d = parseFloat(dom.daysInput.value);
-  if (!Number.isFinite(d)) d = 1;
-  if (d < 1) d = 1; if (d > 31) d = 31;
-  dom.daysInput.value = d;
-  state.days = d;
-  renderAll();
-});
+  dom.daysInput.addEventListener("input", () => {
+    let d = parseFloat(dom.daysInput.value);
+    if (!Number.isFinite(d)) d = 1;
+    if (d < 1) d = 1; if (d > 31) d = 31;
+    dom.daysInput.value = d;
+    state.days = d;
+    renderAll();
+  });
 
   // Clear selection
   dom.clearSelBtn.addEventListener("click", () => {
@@ -643,13 +691,19 @@ function renderBreakdown(){
     const pieBox = document.createElement('div');
     const items = [];
 
-    ENERGY_COMPONENT_KEYS.forEach(k => {
+    ENERGY_COMPONENT_KEYS.concat(["Legacy Charge [c/kWh]"]).forEach(k => {
       if (t[k] != null) {
         const lbl = canonicalizeLabel(k);
         items.push({ label: lbl, value: (t[k]||0)/100*state.kwh, color: COLOR_MAP[lbl] });
         seen.add(lbl);
       }
     });
+    // Add synthetic Active energy slice for Homeflex pies
+    if (isHomeflexTariff(t.Tariff)) {
+      items.push({ label: 'Active energy', value: (homeflexActiveEnergyCentsBlended()/100)*state.kwh, color: COLOR_MAP['Active energy'] });
+      seen.add('Active energy');
+    }
+
     FIXED_COMPONENT_KEYS.forEach(k => {
       if (t[k] != null) {
         const lbl = canonicalizeLabel(k);
@@ -670,4 +724,6 @@ function renderBreakdown(){
   const legendLabels = CANON_ORDER.filter(lbl => seen.has(lbl));
   renderGlobalLegend(dom.piesLegend, legendLabels, COLOR_MAP);
 }
+
+
 
