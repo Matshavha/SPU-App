@@ -1,4 +1,6 @@
-// ✅ simulate.js — now with Homeflex (TOU + Gen-offset credits) and VAT inclusion
+// ✅ simulate.js — TOU Homeflex tariffs (Peak/Standard/Off-peak + Gen-offset credits capped by TOU consumption)
+// Seasonal proration by actual date range (High: Jun–Aug, Low: Sep–May). VAT included in totals.
+// UI: works with the same simulate.html you shared (simple block + Homeflex block).
 
 // ---------------- VAT ----------------
 const VAT_RATE = 0.15;
@@ -25,9 +27,8 @@ function seasonDaySplit(startISO, endISO) {
   return { high, low, total, fHigh: total ? high / total : 0, fLow: total ? low / total : 0 };
 }
 
-// ---------------- Embedded tariff data (yours, VAT-exclusive) ----------------
+// ---------------- Embedded tariff data (VAT-exclusive) ----------------
 const tariffData = [
-  // (unchanged) — Businessrate, Homepower, Homelight, Landrate, Landlight, Municrate
   {"Tariff":"Businessrate 1","Energy Charge [c/kWh]":224.93,"Ancillary Service Charge [c/kWh]":0.41,"Network Demand Charge [c/kWh]":14.54,"Network Capacity Charge [R/POD/day]":20.34,"Service and Administration Charge [R/POD/day]":14.70,"Electrification and Rural Network Subsidy Charge [c/kWh]":4.94,"Generation Capacity Charge [R/POD/day]":1.98},
   {"Tariff":"Businessrate 2","Energy Charge [c/kWh]":224.93,"Ancillary Service Charge [c/kWh]":0.41,"Network Demand Charge [c/kWh]":14.54,"Network Capacity Charge [R/POD/day]":30.21,"Service and Administration Charge [R/POD/day]":14.70,"Electrification and Rural Network Subsidy Charge [c/kWh]":4.94,"Generation Capacity Charge [R/POD/day]":2.95},
   {"Tariff":"Businessrate 3","Energy Charge [c/kWh]":224.93,"Ancillary Service Charge [c/kWh]":0.41,"Network Demand Charge [c/kWh]":14.54,"Network Capacity Charge [R/POD/day]":75.38,"Service and Administration Charge [R/POD/day]":14.70,"Electrification and Rural Network Subsidy Charge [c/kWh]":4.94,"Generation Capacity Charge [R/POD/day]":7.37},
@@ -69,7 +70,7 @@ const HF_ENERGY = {
   high: { peak: 706.97, standard: 216.31, offpeak: 159.26 },
   low:  { peak: 329.28, standard: 204.90, offpeak: 159.26 }
 };
-// From uploaded Gen-offset table (your screenshot): VAT-exclusive rebate rates
+// From the Gen-offset table (rebate rates, VAT-exclusive)
 const HF_REBATE = {
   high: { peak: 650.52, standard: 185.41, offpeak: 131.21 },
   low:  { peak: 292.75, standard: 174.58, offpeak: 131.21 }
@@ -81,8 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const output = document.getElementById('billOutput');
   const tariffSelect = document.getElementById('tariff');
 
-  const blockSimple = document.getElementById('blockSimpleEnergy');
-  const blockHF = document.getElementById('blockHomeflex');
+  // Blocks (simple vs Homeflex)
+  const blockSimple = document.getElementById('blockSimpleEnergy');   // container with “Energy [kWh]”
+  const blockHF     = document.getElementById('blockHomeflex');       // container with TOU + Export fields
 
   // Populate tariffs
   tariffData.forEach(t => {
@@ -94,13 +96,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Toggle Homeflex inputs
   function isHomeflex(name){ return /^Homeflex\s[1-4]$/.test(name); }
-  tariffSelect.addEventListener('change', () => {
+  function toggleBlocks(){
     const isHF = isHomeflex(tariffSelect.value);
-    blockHF.style.display = isHF ? '' : 'none';
-    blockSimple.style.display = isHF ? 'none' : '';
-  });
+    if (blockHF) blockHF.style.display = isHF ? '' : 'none';
+    if (blockSimple) blockSimple.style.display = isHF ? 'none' : '';
+  }
+  tariffSelect.addEventListener('change', toggleBlocks);
+  toggleBlocks();
 
-  // Defaults for date & PODs (unchanged)
+  // Defaults for date & PODs
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -122,25 +126,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const startISO = document.getElementById('start').value;
     const endISO   = document.getElementById('end').value;
     const days = daysBetween(startISO, endISO);
-    const { high, low, total, fHigh, fLow } = seasonDaySplit(startISO, endISO);
+    const { fHigh, fLow } = seasonDaySplit(startISO, endISO);
 
     const breakdown = [];
     let subtotal = 0;
 
-    // Helper: push a line (handles VAT)
-    function addLine(label, baseAmountExVAT, unitText=null, showRate=null){
+    // push a line (adds VAT)
+    function addLine(label, baseAmountExVAT, rateDisplay=''){
       const amountInc = baseAmountExVAT * (1 + VAT_RATE);
       subtotal += amountInc;
-      breakdown.push({
-        name: label,
-        unitText,
-        rateDisplay: showRate,
-        amountInc
-      });
+      breakdown.push({ name: label, rateDisplay, amountInc });
     }
 
-    // ---------------- Non-Homeflex flow (unchanged) ----------------
-    if (!/^Homeflex\s[1-4]$/.test(selected['Tariff'])) {
+    // ---------------- Non-Homeflex flow ----------------
+    if (!isHomeflex(selected['Tariff'])) {
       const energy = parseFloat(document.getElementById('energy').value || '0');
 
       for (const key in selected) {
@@ -151,18 +150,20 @@ document.addEventListener('DOMContentLoaded', () => {
           if (unit === 'c/kWh') {
             chargeEx = (val / 100) * energy;
           } else if (unit === 'R/POD/day') {
-            // Keep your original behaviour (apportion per POD)
+            // NOTE: This models a per-POD share (divide by pods). If you want the full
+            // invoice across N PODs, multiply by pods instead.
             chargeEx = (val / pods) * days;
           }
           const rateInc = unit === 'c/kWh'
             ? `${(val*(1+VAT_RATE)).toFixed(2)} c/kWh`
             : `${formatRateRands(val*(1+VAT_RATE))} /POD/day`;
-          addLine(key.split('[')[0].trim(), chargeEx, unit, rateInc);
+          addLine(key.split('[')[0].trim(), chargeEx, rateInc);
         }
       }
 
     } else {
-      // ---------------- Homeflex flow (TOU + Gen-offset) ----------------
+      // ---------------- Homeflex flow (TOU + Gen-offset credits) ----------------
+      // Read TOU consumptions (kWh) and exports (kWh)
       const peakK = parseFloat(document.getElementById('hf_peak_kwh').value || '0');
       const stdK  = parseFloat(document.getElementById('hf_std_kwh').value  || '0');
       const offK  = parseFloat(document.getElementById('hf_off_kwh').value  || '0');
@@ -175,61 +176,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Energy charges (TOU) — prorate by season-day fractions
       function energyChargeEx(energyKWh, rateHigh, rateLow){
-        // energyKWh applies to full period; split by day fractions
         return (energyKWh * fHigh * (rateHigh/100)) + (energyKWh * fLow * (rateLow/100));
       }
-
       const energyPeakEx = energyChargeEx(peakK, HF_ENERGY.high.peak, HF_ENERGY.low.peak);
       const energyStdEx  = energyChargeEx(stdK,  HF_ENERGY.high.standard, HF_ENERGY.low.standard);
       const energyOffEx  = energyChargeEx(offK,  HF_ENERGY.high.offpeak,  HF_ENERGY.low.offpeak);
 
-      addLine("Active Energy — Peak (TOU)", energyPeakEx,
-              "c/kWh", `${(HF_ENERGY.high.peak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.peak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
-      addLine("Active Energy — Standard (TOU)", energyStdEx,
-              "c/kWh", `${(HF_ENERGY.high.standard*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.standard*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
-      addLine("Active Energy — Off-peak (TOU)", energyOffEx,
-              "c/kWh", `${(HF_ENERGY.high.offpeak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.offpeak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Active Energy — Peak (TOU)",
+              energyPeakEx,
+              `${(HF_ENERGY.high.peak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.peak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Active Energy — Standard (TOU)",
+              energyStdEx,
+              `${(HF_ENERGY.high.standard*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.standard*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Active Energy — Off-peak (TOU)",
+              energyOffEx,
+              `${(HF_ENERGY.high.offpeak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_ENERGY.low.offpeak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
 
       // Other energy-linked charges on total energy
-      const legacyEx   = (selected["Legacy Charge [c/kWh]"]   || 0) / 100 * totalEnergy;
-      const ndemandEx  = (selected["Network Demand Charge [c/kWh]"] || 0) / 100 * totalEnergy;
-      const ancillaryEx= (selected["Ancillary Service Charge [c/kWh]"] || 0) / 100 * totalEnergy;
+      const legacyEx    = (selected["Legacy Charge [c/kWh]"]                || 0) / 100 * totalEnergy;
+      const ndemandEx   = (selected["Network Demand Charge [c/kWh]"]        || 0) / 100 * totalEnergy
+                        + (selected["Netword Demand Charge [c/kWh]"]        || 0) / 100 * totalEnergy; // accept both spellings
+      const ancillaryEx = (selected["Ancillary Service Charge [c/kWh]"]     || 0) / 100 * totalEnergy;
+      const electSubEx  = (selected["Electrification and Rural Network Subsidy Charge [c/kWh]"] || 0) / 100 * totalEnergy;
 
-      if (legacyEx>0)  addLine("Legacy Charge", legacyEx, "c/kWh", `${(selected["Legacy Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
-      if (ndemandEx>0) addLine("Network Demand Charge", ndemandEx, "c/kWh", `${(selected["Network Demand Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
-      if (ancillaryEx>0) addLine("Ancillary Service Charge", ancillaryEx, "c/kWh", `${(selected["Ancillary Service Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
+      if (legacyEx>0)    addLine("Legacy Charge", legacyEx, `${(selected["Legacy Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
+      if (ndemandEx>0)   addLine("Network Demand Charge", ndemandEx, `${(((selected["Network Demand Charge [c/kWh]"]||0)+(selected["Netword Demand Charge [c/kWh]"]||0))*(1+VAT_RATE)).toFixed(2)} c/kWh`);
+      if (ancillaryEx>0) addLine("Ancillary Service Charge", ancillaryEx, `${(selected["Ancillary Service Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
+      if (electSubEx>0)  addLine("Electrification & Rural Network Subsidy", electSubEx, `${(selected["Electrification and Rural Network Subsidy Charge [c/kWh]"]*(1+VAT_RATE)).toFixed(2)} c/kWh`);
 
-      // Fixed daily charges (keep your original per-POD apportion)
-      const ncap = selected["Network Capacity Charge [R/POD/day]"] || 0;
-      const gcap = selected["Generation Capacity Charge [R/POD/day]"] || 0;
+      // Fixed daily charges (per-POD share as per your existing model)
+      const ncap   = selected["Network Capacity Charge [R/POD/day]"] || 0;
+      const gcap   = selected["Generation Capacity Charge [R/POD/day]"] || 0;
       const sadmin = selected["Service and Administration Charge [R/POD/day]"] || 0;
 
-      if (ncap)   addLine("Network Capacity Charge",   (ncap / pods) * days, "R/POD/day", `${formatRateRands(ncap*(1+VAT_RATE))} /POD/day`);
-      if (gcap)   addLine("Generation Capacity Charge",(gcap / pods) * days, "R/POD/day", `${formatRateRands(gcap*(1+VAT_RATE))} /POD/day`);
-      if (sadmin) addLine("Service & Administration",  (sadmin / pods) * days, "R/POD/day", `${formatRateRands(sadmin*(1+VAT_RATE))} /POD/day`);
+      if (ncap)   addLine("Network Capacity Charge",   (ncap / pods) * days, `${formatRateRands(ncap*(1+VAT_RATE))} /POD/day`);
+      if (gcap)   addLine("Generation Capacity Charge",(gcap / pods) * days, `${formatRateRands(gcap*(1+VAT_RATE))} /POD/day`);
+      if (sadmin) addLine("Service & Administration",  (sadmin / pods) * days, `${formatRateRands(sadmin*(1+VAT_RATE))} /POD/day`);
 
       // -------- Gen-offset credits (negative lines), capped at consumption per TOU --------
       function rebateCreditEx(exportKWh, consKWh, rHigh, rLow){
         const eligible = Math.min(exportKWh, consKWh);
         return eligible * fHigh * (rHigh/100) + eligible * fLow * (rLow/100);
       }
-
       const creditPeakEx = rebateCreditEx(peakX, peakK, HF_REBATE.high.peak, HF_REBATE.low.peak);
       const creditStdEx  = rebateCreditEx(stdX,  stdK,  HF_REBATE.high.standard, HF_REBATE.low.standard);
       const creditOffEx  = rebateCreditEx(offX,  offK,  HF_REBATE.high.offpeak,  HF_REBATE.low.offpeak);
 
-      // Add as negative (reduces subtotal)
-      addLine("Gen-offset Credit — Peak",   -creditPeakEx,  "c/kWh", `${(HF_REBATE.high.peak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.peak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
-      addLine("Gen-offset Credit — Standard",-creditStdEx, "c/kWh", `${(HF_REBATE.high.standard*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.standard*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
-      addLine("Gen-offset Credit — Off-peak",-creditOffEx, "c/kWh", `${(HF_REBATE.high.offpeak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.offpeak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Gen-offset Credit — Peak",    -creditPeakEx,  `${(HF_REBATE.high.peak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.peak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Gen-offset Credit — Standard",-creditStdEx,   `${(HF_REBATE.high.standard*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.standard*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
+      addLine("Gen-offset Credit — Off-peak", -creditOffEx,  `${(HF_REBATE.high.offpeak*(1+VAT_RATE)).toFixed(2)} (High), ${(HF_REBATE.low.offpeak*(1+VAT_RATE)).toFixed(2)} (Low) c/kWh`);
     }
 
-    // VAT amount (for display only, still show total incl VAT)
-    const vatAmount = subtotal / (1 + VAT_RATE) * VAT_RATE;
-
-    // -------- Render table (unchanged style) --------
+    // -------- Render table --------
     output.innerHTML = `
-      <h2 style="margin-bottom: 10px;">Bill Breakdown (VAT Inclusive)</h2>
+      <h2 style="margin-bottom:10px;">Bill Breakdown (VAT Inclusive)</h2>
       <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:10px;">
           <thead style="background-color:#f9f9f9;">
@@ -254,7 +254,11 @@ document.addEventListener('DOMContentLoaded', () => {
           </tbody>
         </table>
       </div>
-      <p style="font-style:italic; color:#555;">All rates and amounts include VAT at 15%. Seasonal split (High: Jun–Aug; Low: Sep–May) is applied by day-count within your selected dates.</p>
+      <p style="font-style:italic; color:#555;">
+        All rates and amounts include VAT at 15%. Seasonal split (High: Jun–Aug; Low: Sep–May) is applied by day-count within your selected dates.
+      </p>
     `;
   });
 });
+
+
