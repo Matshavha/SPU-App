@@ -1,3 +1,18 @@
+/**
+ * compareTariffs.js — SPU Tariff comparator
+ *
+ * Homeflex changes in this version:
+ *  - Uses an explicit 2025/26 public-holiday mapping (last column of the uploaded table).
+ *  - Counts hours hour-by-hour across the chosen date range (URL ?start & ?end, or current
+ *    month + state.days) and splits TOU consumption/exports by season (High vs Low) *per band*.
+ *  - Buy and Gen-offset rebate are computed from those per-band, per-season splits.
+ *
+ * References (APA 7):
+ * Eskom Holdings SOC Ltd. (2025a). Tariffs and Charges Booklet 2025/2026. Eskom.
+ * Eskom Holdings SOC Ltd. (2025b). Public holiday TOU treatment table 2025/26
+ *   (Megaflex / Miniflex / WEPS / Megaflex Gen column) — used for Homeflex mapping.
+ */
+
 const VAT_RATE = 0.15;
 const MAX_SELECT = 5;
 
@@ -40,6 +55,7 @@ function estimateTextWidth(text, fontSize = 12) {
 function money(v){ return `R ${v.toFixed(2)}`; }
 function cents(v){ return `${v.toFixed(2)} c/kWh`; }
 function perDay(v){ return `R ${v.toFixed(2)} /POD/day`; }
+function iso(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 /* ---------- Tariff data (VAT-exclusive) ---------- */
 const tariffData = [
@@ -79,7 +95,7 @@ const tariffData = [
 ];
 
 /* ---------- Homeflex TOU buy & rebate rates (VAT-exclusive, c/kWh) ---------- */
-// Exact numbers aligned with simulate.js
+// Eskom Holdings SOC Ltd. (2025a)
 const HF_ENERGY = {
   high: { peak: 706.97, standard: 216.31, offpeak: 159.26 },
   low:  { peak: 329.28, standard: 204.90, offpeak: 159.26 }
@@ -89,7 +105,7 @@ const HF_REBATE = {
   low:  { peak: 292.75, standard: 174.58, offpeak: 131.21 }
 };
 
-/* ---------- Season helpers ---------- */
+/* ---------- Season & date helpers ---------- */
 // URL support: ?start=YYYY-MM-DD&end=YYYY-MM-DD (no UI change)
 function parseISO(d){ const t = new Date(d); return Number.isNaN(t.getTime()) ? null : t; }
 function firstOfMonth(date){ return new Date(date.getFullYear(), date.getMonth(), 1); }
@@ -97,7 +113,6 @@ function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); r
 function daysBetweenDates(a,b){ return Math.max(0, Math.floor((b - a) / 86400000) + 1); }
 function isHighMonth(m){ return m===5 || m===6 || m===7; } // Jun, Jul, Aug
 
-// Count days in high vs low between two dates inclusive
 function seasonDaySplit(start, end){
   let high=0, low=0;
   for (let d=new Date(start); d<=end; d.setDate(d.getDate()+1)){
@@ -106,22 +121,117 @@ function seasonDaySplit(start, end){
   const total = high+low;
   return { high, low, total, fHigh: total ? high/total : 0, fLow: total ? low/total : 0 };
 }
-
-// Derive season fractions without changing UI:
-// 1) If URL provides ?start & ?end, use those.
-// 2) Else infer a synthetic period: start = first day of CURRENT month, end = start + (state.days-1).
-function inferSeasonFractions(days){
+function inferDateRange(days){
   const params = new URLSearchParams(location.search);
   const sStr = params.get('start');
   const eStr = params.get('end');
   const s = sStr ? parseISO(sStr) : null;
   const e = eStr ? parseISO(eStr) : null;
-  if (s && e && e >= s) return seasonDaySplit(s, e);
-
+  if (s && e && e >= s) return { start: s, end: e };
   const today = new Date();
   const start = firstOfMonth(today);
   const end = addDays(start, Math.max(0, Math.round(days) - 1));
+  return { start, end };
+}
+function inferSeasonFractions(days){
+  const { start, end } = inferDateRange(days);
   return seasonDaySplit(start, end);
+}
+
+/* ---------- Homeflex TOU wheels & explicit PH mapping (2025/26) ---------- */
+// Wheels: Eskom 2025/26 (Eskom Holdings SOC Ltd., 2025a)
+const HF_TOU = {
+  high: {
+    weekday: {
+      peak:     [[6,8],[18,21]],
+      standard: [[8,18],[21,22]],
+      offpeak:  [[22,24],[0,6]]
+    },
+    saturday: {
+      peak:     [],
+      standard: [[7,8],[18,22]],
+      offpeak:  [[22,24],[0,7],[8,18]]
+    },
+    sunday: {
+      peak:     [],
+      standard: [[19,21]],
+      offpeak:  [[21,24],[0,19]]
+    }
+  },
+  low: {
+    weekday: {
+      peak:     [[7,8],[20,21]],
+      standard: [[6,7],[18,20],[21,22]],
+      offpeak:  [[22,24],[0,6]]
+    },
+    saturday: {
+      peak:     [[7,8],[19,20]],
+      standard: [[6,7],[18,19],[20,22]],
+      offpeak:  [[22,24],[0,6],[8,18]]
+    },
+    sunday: {
+      peak:     [[7,8],[19,20]],
+      standard: [[6,7],[20,22]],
+      offpeak:  [[22,24],[0,6],[8,19]]
+    }
+  }
+};
+function inAny(hour, ranges){ return ranges.some(([a,b]) => hour>=a && hour<b); }
+function seasonOf(date){
+  const m = date.getMonth();
+  return (m===5 || m===6 || m===7) ? 'high' : 'low';
+}
+
+// 2025/26 PH mapping: use LAST COLUMN (Megaflex/Miniflex/WEPS/Megaflex Gen) — Eskom (2025b)
+const HF_PH_2025_26 = {
+  // 2025
+  '2025-04-18': 'sunday',   // Good Friday
+  '2025-04-21': 'sunday',   // Family Day
+  '2025-04-27': 'sunday',   // Freedom Day (Sunday)
+  '2025-04-28': 'saturday', // Observed Monday
+  '2025-05-01': 'saturday', // Workers’ Day
+  '2025-06-16': 'saturday', // Youth Day
+  '2025-08-09': 'saturday', // National Women's Day (Saturday)
+  '2025-09-24': 'saturday', // Heritage Day
+  '2025-12-16': 'saturday', // Day of Reconciliation
+  '2025-12-25': 'sunday',   // Christmas Day
+  '2025-12-26': 'sunday',   // Day of Goodwill
+  // 2026
+  '2026-01-01': 'sunday',   // New Year’s Day
+  '2026-03-21': 'saturday', // Human Rights Day (Saturday)
+  '2026-04-03': 'sunday',   // Good Friday
+  '2026-04-06': 'sunday',   // Family Day
+  '2026-04-27': 'sunday',   // Freedom Day
+  '2026-05-01': 'saturday', // Workers’ Day
+  '2026-06-16': 'saturday'  // Youth Day
+};
+function homeflexDayType(date){
+  const key = iso(date);
+  const mapped = HF_PH_2025_26[key]; // 'saturday' | 'sunday' | undefined
+  if (mapped) return mapped;
+  const d = date.getDay();
+  if (d === 6) return 'saturday';
+  if (d === 0) return 'sunday';
+  return 'weekday';
+}
+function countHomeflexTouHours(startISO, endISO){
+  const s = new Date(startISO);
+  const e = new Date(endISO);
+  const cursor = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 0, 0, 0);
+  const endHour = new Date(e.getFullYear(), e.getMonth(), e.getDate(), 23, 0, 0);
+
+  const counts = { high: { peak:0, standard:0, offpeak:0 }, low: { peak:0, standard:0, offpeak:0 } };
+  while (cursor <= endHour) {
+    const season = seasonOf(cursor);
+    const type = homeflexDayType(cursor);
+    const hour = cursor.getHours();
+    const cfg = HF_TOU[season][type];
+    if (inAny(hour, cfg.peak)) counts[season].peak++;
+    else if (inAny(hour, cfg.standard)) counts[season].standard++;
+    else counts[season].offpeak++;
+    cursor.setHours(cursor.getHours()+1);
+  }
+  return counts;
 }
 
 /* ---------- helpers ---------- */
@@ -402,6 +512,54 @@ function canonicalizeLabel(raw){
   return base;
 }
 
+/* ---------- Homeflex active energy using hour counts (per-band, per-season) ---------- */
+function homeflexActiveEnergyRandFromHours(hourCounts) {
+  const c = state.hf.cons, e = state.hf.exp;
+
+  const bandHours = {
+    peak:     (hourCounts?.high?.peak     || 0) + (hourCounts?.low?.peak     || 0),
+    standard: (hourCounts?.high?.standard || 0) + (hourCounts?.low?.standard || 0),
+    offpeak:  (hourCounts?.high?.offpeak  || 0) + (hourCounts?.low?.offpeak  || 0),
+  };
+
+  function splitBySeason(band, kwh){
+    const totalH = bandHours[band] || 0;
+    if (!totalH || kwh <= 0) return { high:0, low:0 };
+    const hi = hourCounts.high[band] || 0;
+    const lo = hourCounts.low[band]  || 0;
+    return { high: kwh * (hi/totalH), low: kwh * (lo/totalH) };
+  }
+
+  const cons = {
+    peak:     splitBySeason('peak', c.peak),
+    standard: splitBySeason('standard', c.standard),
+    offpeak:  splitBySeason('offpeak', c.offpeak)
+  };
+  const exp  = {
+    peak:     splitBySeason('peak', e.peak),
+    standard: splitBySeason('standard', e.standard),
+    offpeak:  splitBySeason('offpeak', e.offpeak)
+  };
+
+  const energyChargeEx = (split, rates) => (split.high * rates.high/100) + (split.low * rates.low/100);
+  const buy =
+      energyChargeEx(cons.peak,     {high:HF_ENERGY.high.peak,     low:HF_ENERGY.low.peak}) +
+      energyChargeEx(cons.standard, {high:HF_ENERGY.high.standard, low:HF_ENERGY.low.standard}) +
+      energyChargeEx(cons.offpeak,  {high:HF_ENERGY.high.offpeak,  low:HF_ENERGY.low.offpeak});
+
+  const rebateCreditEx = (expSplit, consSplit, rates) => {
+    const hiK = Math.min(expSplit.high, consSplit.high);
+    const loK = Math.min(expSplit.low,  consSplit.low);
+    return hiK * (rates.high/100) + loK * (rates.low/100);
+  };
+  const rebate =
+      rebateCreditEx(exp.peak,     cons.peak,     {high:HF_REBATE.high.peak,     low:HF_REBATE.low.peak}) +
+      rebateCreditEx(exp.standard, cons.standard, {high:HF_REBATE.high.standard, low:HF_REBATE.low.standard}) +
+      rebateCreditEx(exp.offpeak,  cons.offpeak,  {high:HF_REBATE.high.offpeak,  low:HF_REBATE.low.offpeak});
+
+  return Math.max(0, buy - rebate); // R, excl VAT
+}
+
 /* ---------- core calcs ---------- */
 function energyCentsPerKwhTotal(t) {
   // Sum only the defined c/kWh keys on the object (DO NOT include Homeflex TOU buy here)
@@ -411,34 +569,11 @@ function fixedRandsPerDayTotal(t) {
   return Object.keys(t).reduce((acc, k) => acc + (isFixedKey(k) ? (t[k] || 0) : 0), 0);
 }
 
-function homeflexActiveEnergyRand(fHigh, fLow) {
-  const c = state.hf.cons, e = state.hf.exp;
-
-  // Buy by season fractions (R, excl VAT)
-  const buy =
-      (c.peak    * (fHigh * HF_ENERGY.high.peak    + fLow * HF_ENERGY.low.peak)    / 100) +
-      (c.standard* (fHigh * HF_ENERGY.high.standard+ fLow * HF_ENERGY.low.standard)/ 100) +
-      (c.offpeak * (fHigh * HF_ENERGY.high.offpeak + fLow * HF_ENERGY.low.offpeak) / 100);
-
-  // Per-TOU rebate capped at consumption, by season fractions (R, excl VAT)
-  const eligible = {
-    peak:     Math.min(c.peak,    e.peak),
-    standard: Math.min(c.standard, e.standard),
-    offpeak:  Math.min(c.offpeak,  e.offpeak),
-  };
-  const rebate =
-      (eligible.peak    * (fHigh * HF_REBATE.high.peak    + fLow * HF_REBATE.low.peak)    / 100) +
-      (eligible.standard* (fHigh * HF_REBATE.high.standard+ fLow * HF_REBATE.low.standard)/ 100) +
-      (eligible.offpeak * (fHigh * HF_REBATE.high.offpeak + fLow * HF_REBATE.low.offpeak) / 100);
-
-  return Math.max(0, buy - rebate);
-}
-
-function componentBreakdownRand(t, kwhGeneric, days, fHigh, fLow) {
+function componentBreakdownRand(t, kwhGeneric, days, hourCounts) {
   const items = [];
   if (isHomeflexTariff(t.Tariff)) {
-    // Active energy (TOU, net of rebate)
-    items.push({ label: 'Active energy', amountR: homeflexActiveEnergyRand(fHigh, fLow), kind:'energy' });
+    // Active energy (TOU, net of rebate) via hour counts
+    items.push({ label: 'Active energy', amountR: homeflexActiveEnergyRandFromHours(hourCounts), kind:'energy' });
 
     // Other energy-based components applied to total TOU consumption
     const kwhTotal = state.hf.cons.peak + state.hf.cons.standard + state.hf.cons.offpeak;
@@ -456,12 +591,12 @@ function componentBreakdownRand(t, kwhGeneric, days, fHigh, fLow) {
   return items;
 }
 
-function calcBill(t, kwhGeneric, days, vatIncl, fHigh, fLow) {
+function calcBill(t, kwhGeneric, days, vatIncl, hourCounts) {
   let energyR_excl = 0;
 
   if (isHomeflexTariff(t.Tariff)) {
     const kwhTotal = state.hf.cons.peak + state.hf.cons.standard + state.hf.cons.offpeak;
-    const activeR = homeflexActiveEnergyRand(fHigh, fLow);
+    const activeR = homeflexActiveEnergyRandFromHours(hourCounts);
     const otherEnergyCents = ["Legacy Charge [c/kWh]","Ancillary Service Charge [c/kWh]","Network Demand Charge [c/kWh]","Netword Demand Charge [c/kWh]","Electrification and Rural Network Subsidy Charge [c/kWh]"]
       .reduce((a,k) => a + (t[k]||0), 0);
     energyR_excl = activeR + (otherEnergyCents/100) * kwhTotal;
@@ -483,14 +618,15 @@ function renderAll() {
     .map(name => tariffData.find(t => t.Tariff === name))
     .filter(Boolean);
 
-  // Season fractions: date-aware via URL or inferred month using state.days
-  const { fHigh, fLow } = inferSeasonFractions(state.days);
+  // Date range (for Homeflex hour counting)
+  const { start, end } = inferDateRange(state.days);
+  const hourCounts = countHomeflexTouHours(iso(start), iso(end)); // safe even if no Homeflex selected
 
-  renderComponentTable(items);
-  renderBillTable(items, fHigh, fLow);
-  renderBillChart(items, fHigh, fLow);
-  renderSplitChart(items, fHigh, fLow);
-  if (state.breakdownOpen) renderBreakdown(fHigh, fLow);
+  renderComponentTable(items, hourCounts);
+  renderBillTable(items, hourCounts);
+  renderBillChart(items, hourCounts);
+  renderSplitChart(items, hourCounts);
+  if (state.breakdownOpen) renderBreakdown(hourCounts);
 }
 
 function renderComponentTable(items) {
@@ -506,10 +642,10 @@ function renderComponentTable(items) {
   });
 }
 
-function renderBillTable(items, fHigh, fLow) {
+function renderBillTable(items, hourCounts) {
   dom.billTable.innerHTML = "";
   items.forEach(t => {
-    const r = calcBill(t, state.kwh, state.days, state.vatInclusive, fHigh, fLow);
+    const r = calcBill(t, state.kwh, state.days, state.vatInclusive, hourCounts);
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${t.Tariff}</td>
@@ -534,6 +670,9 @@ function text(x,y,str,{anchor="start",size=12,color=THEME.ink}={}) {
   t.textContent = str;
   return t;
 }
+function polarToCartesian(cx, cy, r, angleRad){
+  return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
+}
 function arcPath(cx, cy, r, startAngle, endAngle, innerR=0){
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end   = polarToCartesian(cx, cy, r, startAngle);
@@ -544,9 +683,6 @@ function arcPath(cx, cy, r, startAngle, endAngle, innerR=0){
   const start2 = polarToCartesian(cx, cy, innerR, endAngle);
   const end2   = polarToCartesian(cx, cy, innerR, startAngle);
   return `M ${start.x} ${start.y} A ${r} ${r} 0 ${arcFlag} 0 ${end.x} ${end.y} L ${end2.x} ${end2.y} A ${innerR} ${innerR} 0 ${arcFlag} 1 ${start2.x} ${start2.y} Z`;
-}
-function polarToCartesian(cx, cy, r, angleRad){
-  return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
 }
 
 /* Horizontal bar chart */
@@ -618,15 +754,15 @@ function drawStackedPctChart(container, labels, pairs) {
   container.appendChild(svg);
 }
 
-function renderBillChart(items, fHigh, fLow) {
+function renderBillChart(items, hourCounts) {
   const labels = items.map(t => t.Tariff);
-  const totals = items.map(t => calcBill(t, state.kwh, state.days, state.vatInclusive, fHigh, fLow).total);
+  const totals = items.map(t => calcBill(t, state.kwh, state.days, state.vatInclusive, hourCounts).total);
   drawBarChart(dom.billChart, labels, totals, { unit: "R" });
 }
-function renderSplitChart(items, fHigh, fLow) {
+function renderSplitChart(items, hourCounts) {
   const labels = items.map(t => t.Tariff);
   const pairs = items.map(t => {
-    const r = calcBill(t, state.kwh, state.days, false, fHigh, fLow);
+    const r = calcBill(t, state.kwh, state.days, false, hourCounts);
     const total = r.sub_excl || 1;
     return {
       energyPct: (r.energyR_excl / total) * 100,
@@ -637,7 +773,7 @@ function renderSplitChart(items, fHigh, fLow) {
 }
 
 /* ---------- Full breakdown card (hidden by default) ---------- */
-function renderBreakdown(fHigh, fLow){
+function renderBreakdown(hourCounts){
   dom.breakdownTableBody.innerHTML = "";
   dom.piesRow.innerHTML = "";
   dom.piesLegend.innerHTML = "";
@@ -654,7 +790,7 @@ function renderBreakdown(fHigh, fLow){
 
   selectedTariffs.forEach((t) => {
     const kwhGeneric = state.kwh;
-    const comps = componentBreakdownRand(t, kwhGeneric, state.days, fHigh, fLow);
+    const comps = componentBreakdownRand(t, kwhGeneric, state.days, hourCounts);
     const energyTotal = comps.filter(c => c.kind==='energy').reduce((a,c)=>a+c.amountR,0);
     const fixedTotal  = comps.filter(c => c.kind==='fixed').reduce((a,c)=>a+c.amountR,0);
     const sub_excl = energyTotal + fixedTotal;
@@ -756,7 +892,7 @@ function drawDonut(container, title, items) {
     if (!it.value) return;
     const frac = it.value / sum;
     const end = angle + frac * Math.PI * 2;
-    const path = svgEl("path", { d: arcPath(cx,cy,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
+    const path = svgEl("path", { d: arcPath(w/2,h/2,r,angle,end,inner), fill: it.color, stroke: '#fff', 'stroke-width': 1 });
     const tip = svgEl("title", {});
     tip.textContent = `${it.label}: ${money(it.value)}`;
     path.appendChild(tip);
@@ -769,7 +905,6 @@ function drawDonut(container, title, items) {
 
   container.appendChild(svg);
 }
-function polarToCartesian(cx, cy, r, angleRad){
-  return { x: cx + r*Math.cos(angleRad), y: cy + r*Math.sin(angleRad) };
-}
+
+
 
