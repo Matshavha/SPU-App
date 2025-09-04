@@ -487,11 +487,9 @@ document.addEventListener('DOMContentLoaded', () => {
         </table>
       </div>
       <p style="font-style:italic; color:#555;">
-        VAT 15% included. TOU hours follow the Eskom booklet wheels (weekday / Saturday / Sunday).
-        For <strong>Homeflex</strong>, <strong>2025/26 public holidays</strong> are treated exactly as per
-        the uploaded table’s <em>Megaflex / Miniflex / WEPS / Megaflex&nbsp;Gen</em> column (e.g., Workers’ Day → Saturday; Good Friday → Sunday),
-        applied hour-by-hour with seasonal split (High: Jun–Aug; Low: Sep–May).
+        VAT 15% included. For <strong>Homeflex TOU Profile</strong>, use the <strong>Understanding Your Tariff</strong> page.
       </p>
     `;
   });
 });
+
