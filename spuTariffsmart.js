@@ -521,7 +521,7 @@ const QUICK_INFO = {
         <li><em>Network Capacity</em>, <em>Generation Capacity</em>, and <em>Service &amp; Administration</em> as daily fixed charges (R/POD/day).</li>
       </ul>
       <p><strong>Good to know</strong></p>
-      <p>Public holidays follow explicit TOU treatment (last column in the published table). The TOU Explorer below lets you test a date &amp; time.</p>
+      <p>Public holidays follow explicit TOU treatment. The TOU Explorer below lets you test a date &amp; time.</p>
     `,
     supplyHTML: `
       <ul class="tight-list">
@@ -774,7 +774,6 @@ function showTouPanel(){
   wrap.innerHTML = `
     <div class="muted" style="margin-bottom:.4rem;">
       Check the Homeflex TOU band (Peak / Standard / Off-peak) for any date & time.
-      Public-holiday handling uses the current year’s explicit rules (last column).
     </div>
 
     <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:end;">
@@ -946,5 +945,6 @@ function createMiniCard(icon, title, onClick){
   btn.addEventListener("click", onClick);
   els.cardsWrap.appendChild(btn);
 }
+
 
 
